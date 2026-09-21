@@ -10,14 +10,17 @@ import '../mocks/mocks.mocks.dart';
 void main() {
   group('HomeWidgetService.sync', () {
     late List<Map<String, String?>> saved;
-    late List<String?> updated;
+    late List<String> appGroups;
+    late List<({String? iOSName, String? qualifiedAndroidName})> updated;
     late MockMedicationIntakeProvider intakeProvider;
     late MockLocaleProvider localeProvider;
 
     setUp(() {
       saved = [];
+      appGroups = [];
       updated = [];
       HomeWidgetService.isPlatformSupported = () => true;
+      HomeWidgetService.isIOSPlatform = () => false;
       intakeProvider = MockMedicationIntakeProvider();
       localeProvider = MockLocaleProvider();
       when(intakeProvider.isLoading).thenReturn(false);
@@ -30,6 +33,7 @@ void main() {
 
     tearDown(() {
       HomeWidgetService.isPlatformSupported = null;
+      HomeWidgetService.isIOSPlatform = null;
     });
 
     final keyCases = [
@@ -43,8 +47,10 @@ void main() {
         final service = HomeWidgetService(
           saveWidgetData: (id, data) async =>
               saved.add({'id': id, 'data': data}),
-          updateWidget: ({qualifiedAndroidName}) async =>
-              updated.add(qualifiedAndroidName),
+          setAppGroupId: (groupId) async => appGroups.add(groupId),
+          updateWidget: ({iOSName, qualifiedAndroidName}) async => updated.add(
+            (iOSName: iOSName, qualifiedAndroidName: qualifiedAndroidName),
+          ),
         );
         // Act
         await service.sync(intakeProvider, localeProvider);
@@ -57,21 +63,66 @@ void main() {
       // Arrange
       final service = HomeWidgetService(
         saveWidgetData: (id, data) async => saved.add({'id': id, 'data': data}),
-        updateWidget: ({qualifiedAndroidName}) async =>
-            updated.add(qualifiedAndroidName),
+        setAppGroupId: (groupId) async => appGroups.add(groupId),
+        updateWidget: ({iOSName, qualifiedAndroidName}) async => updated.add(
+          (iOSName: iOSName, qualifiedAndroidName: qualifiedAndroidName),
+        ),
       );
       // Act
       await service.sync(intakeProvider, localeProvider);
       // Assert
-      expect(updated, ['com.deliacheminot.mona.HrtGlanceReceiver']);
+      expect(updated, [
+        (
+          iOSName: 'HrtWidget',
+          qualifiedAndroidName: 'com.deliacheminot.mona.HrtGlanceReceiver',
+        ),
+      ]);
+    });
+
+    test('configures the shared App Group on iOS', () async {
+      // Arrange
+      final service = HomeWidgetService(
+        saveWidgetData: (id, data) async => saved.add({'id': id, 'data': data}),
+        setAppGroupId: (groupId) async => appGroups.add(groupId),
+        updateWidget: ({iOSName, qualifiedAndroidName}) async => updated.add(
+          (iOSName: iOSName, qualifiedAndroidName: qualifiedAndroidName),
+        ),
+      );
+      HomeWidgetService.isIOSPlatform = () => true;
+      // Act
+      await service.sync(intakeProvider, localeProvider);
+      // Assert
+      expect(appGroups, ['group.com.deliacheminot.mona']);
+    });
+
+    test('preserves the locale region for widget localization', () async {
+      // Arrange
+      final service = HomeWidgetService(
+        saveWidgetData: (id, data) async => saved.add({'id': id, 'data': data}),
+        setAppGroupId: (groupId) async => appGroups.add(groupId),
+        updateWidget: ({iOSName, qualifiedAndroidName}) async => updated.add(
+          (iOSName: iOSName, qualifiedAndroidName: qualifiedAndroidName),
+        ),
+      );
+      when(localeProvider.locale).thenReturn(
+          const Locale.fromSubtags(languageCode: 'pt', countryCode: 'BR'));
+      // Act
+      await service.sync(intakeProvider, localeProvider);
+      // Assert
+      expect(
+        saved,
+        contains(equals({'id': 'app_locale', 'data': 'pt-BR'})),
+      );
     });
 
     test('pushes a null first date to clear the widget', () async {
       // Arrange
       final service = HomeWidgetService(
         saveWidgetData: (id, data) async => saved.add({'id': id, 'data': data}),
-        updateWidget: ({qualifiedAndroidName}) async =>
-            updated.add(qualifiedAndroidName),
+        setAppGroupId: (groupId) async => appGroups.add(groupId),
+        updateWidget: ({iOSName, qualifiedAndroidName}) async => updated.add(
+          (iOSName: iOSName, qualifiedAndroidName: qualifiedAndroidName),
+        ),
       );
       when(intakeProvider.firstTakenLocalDate).thenReturn(null);
       // Act
@@ -84,8 +135,10 @@ void main() {
       // Arrange
       final service = HomeWidgetService(
         saveWidgetData: (id, data) async => saved.add({'id': id, 'data': data}),
-        updateWidget: ({qualifiedAndroidName}) async =>
-            updated.add(qualifiedAndroidName),
+        setAppGroupId: (groupId) async => appGroups.add(groupId),
+        updateWidget: ({iOSName, qualifiedAndroidName}) async => updated.add(
+          (iOSName: iOSName, qualifiedAndroidName: qualifiedAndroidName),
+        ),
       );
       HomeWidgetService.isPlatformSupported = () => false;
       // Act
@@ -98,8 +151,10 @@ void main() {
       // Arrange
       final service = HomeWidgetService(
         saveWidgetData: (id, data) async => saved.add({'id': id, 'data': data}),
-        updateWidget: ({qualifiedAndroidName}) async =>
-            updated.add(qualifiedAndroidName),
+        setAppGroupId: (groupId) async => appGroups.add(groupId),
+        updateWidget: ({iOSName, qualifiedAndroidName}) async => updated.add(
+          (iOSName: iOSName, qualifiedAndroidName: qualifiedAndroidName),
+        ),
       );
       when(intakeProvider.isLoading).thenReturn(true);
       // Act
