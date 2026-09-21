@@ -3,35 +3,110 @@ import WidgetKit
 
 private let widgetKind = "HrtWidget"
 
+#if WIDGET_PREVIEW
+private let previewAppGroup = Bundle.main.object(
+    forInfoDictionaryKey: "PreviewAppGroup"
+) as? String
+#endif
+
 private enum HrtWidgetColors {
-    // Matches the Android widget's default Material color scheme while the
-    // surrounding layout and typography remain native to WidgetKit.
+    // Keeps Mona's Android widget palette, expressed through native iOS shapes
+    // and semantic foreground colors.
     static let accent = Color(red: 103.0 / 255.0, green: 80.0 / 255.0, blue: 164.0 / 255.0)
     static let accentSoft = Color(red: 255.0 / 255.0, green: 216.0 / 255.0, blue: 228.0 / 255.0)
     static let accentOnSoft = Color(red: 49.0 / 255.0, green: 17.0 / 255.0, blue: 29.0 / 255.0)
 }
 
+fileprivate enum HrtDurationUnit: String {
+    case days
+    case weeks
+    case months
+    case years
+
+    func label(for value: Int) -> String {
+        guard value == 1 else { return rawValue }
+        return String(rawValue.dropLast())
+    }
+
+    var compactLabel: String {
+        switch self {
+        case .days: return "d"
+        case .weeks: return "w"
+        case .months: return "mo"
+        case .years: return "y"
+        }
+    }
+}
+
 struct HrtWidgetEntry: TimelineEntry {
     let date: Date
+    let durationValue: Int
+    fileprivate let durationUnit: HrtDurationUnit
+    let intakeCount: Int
+    let showsIntakes: Bool
+
+    fileprivate var durationText: String {
+        "\(durationValue) \(durationUnit.label(for: durationValue))"
+    }
+
+    fileprivate var intakeText: String {
+        "\(intakeCount) \(intakeCount == 1 ? "intake" : "intakes") logged"
+    }
+
+    fileprivate static let sample = HrtWidgetEntry(
+        date: Date(),
+        durationValue: 8,
+        durationUnit: .months,
+        intakeCount: 16,
+        showsIntakes: true
+    )
 }
 
 struct HrtWidgetProvider: TimelineProvider {
     func placeholder(in context: Context) -> HrtWidgetEntry {
-        HrtWidgetEntry(date: Date())
+        .sample
     }
 
     func getSnapshot(
         in context: Context,
         completion: @escaping (HrtWidgetEntry) -> Void
     ) {
-        completion(HrtWidgetEntry(date: Date()))
+        completion(currentEntry)
     }
 
     func getTimeline(
         in context: Context,
         completion: @escaping (Timeline<HrtWidgetEntry>) -> Void
     ) {
-        completion(Timeline(entries: [HrtWidgetEntry(date: Date())], policy: .never))
+        completion(Timeline(entries: [currentEntry], policy: .never))
+    }
+
+    private var currentEntry: HrtWidgetEntry {
+        #if WIDGET_PREVIEW
+        guard let previewAppGroup,
+              let defaults = UserDefaults(suiteName: previewAppGroup)
+        else {
+            return .sample
+        }
+
+        let storedValue = defaults.integer(forKey: "preview_duration_value")
+        let storedUnit = defaults.string(forKey: "preview_duration_unit")
+        let storedIntakes = defaults.integer(forKey: "preview_intake_count")
+
+        return HrtWidgetEntry(
+            date: Date(),
+            durationValue: storedValue > 0 ? storedValue : HrtWidgetEntry.sample.durationValue,
+            durationUnit: HrtDurationUnit(rawValue: storedUnit ?? "") ?? .months,
+            intakeCount: defaults.object(forKey: "preview_intake_count") == nil
+                ? HrtWidgetEntry.sample.intakeCount
+                : max(0, storedIntakes),
+            showsIntakes: defaults.object(forKey: "preview_show_intakes") == nil
+                ? true
+                : defaults.bool(forKey: "preview_show_intakes")
+        )
+        #else
+        return .sample
+        #endif
     }
 }
 
@@ -62,36 +137,41 @@ struct HrtWidgetEntryView: View {
 
     private var smallWidget: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack {
-                symbolBadge(size: 30, symbolSize: 14)
-
-                Spacer(minLength: 4)
-
-                Text("HRT")
+            HStack(spacing: 7) {
+                Image(systemName: "calendar")
                     .font(.caption.weight(.semibold))
+                    .foregroundColor(HrtWidgetColors.accent)
+
+                Text("TIME ON HRT")
+                    .font(.caption2.weight(.semibold))
                     .foregroundColor(.secondary)
+                    .tracking(0.4)
             }
 
-            Spacer(minLength: 4)
+            Spacer(minLength: 8)
 
-            Text("8")
-                .font(.system(size: 36, weight: .bold, design: .rounded))
-                .foregroundColor(HrtWidgetColors.accent)
-                .minimumScaleFactor(0.8)
-
-            Text("months")
-                .font(.headline)
-
-            Text("16 intakes logged")
-                .font(.caption2)
-                .foregroundColor(.secondary)
+            Text(entry.durationText)
+                .font(.system(size: 29, weight: .bold, design: .rounded))
+                .foregroundColor(.primary)
                 .lineLimit(1)
-                .minimumScaleFactor(0.8)
-                .padding(.top, 3)
+                .minimumScaleFactor(0.52)
+
+            if entry.showsIntakes {
+                Label(entry.intakeText, systemImage: "checkmark.circle.fill")
+                    .font(.caption2.weight(.medium))
+                    .foregroundColor(HrtWidgetColors.accent)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 5)
+                    .background(HrtWidgetColors.accentSoft.opacity(0.5))
+                    .clipShape(Capsule())
+                    .padding(.top, 8)
+            }
         }
-        .padding(12)
+        .padding(14)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("On HRT for 8 months. 16 intakes logged.")
+        .accessibilityLabel(accessibilitySummary)
     }
 
     private var mediumWidget: some View {
@@ -99,79 +179,78 @@ struct HrtWidgetEntryView: View {
             symbolBadge(size: 48, symbolSize: 24)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text("On HRT for 8 months")
+                Text("On HRT for \(entry.durationText)")
                     .font(.system(size: 18, weight: .medium))
                     .foregroundColor(.primary)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.8)
+                    .minimumScaleFactor(0.7)
 
-                Text("16 intakes logged")
-                    .font(.system(size: 13))
-                    .foregroundColor(.secondary)
-                    .lineLimit(1)
+                if entry.showsIntakes {
+                    Text(entry.intakeText)
+                        .font(.system(size: 13))
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                }
             }
 
             Spacer(minLength: 0)
         }
         .padding(16)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("On HRT for 8 months. 16 intakes logged.")
+        .accessibilityLabel(accessibilitySummary)
     }
 
     private var largeWidget: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 10) {
-                symbolBadge(size: 40, symbolSize: 19)
+                symbolBadge(size: 38, symbolSize: 18)
 
-                VStack(alignment: .leading, spacing: 1) {
-                    Text("Your HRT journey")
-                        .font(.headline)
-                    Text("Sample overview")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-
-                Spacer()
-            }
-
-            VStack(alignment: .leading, spacing: 0) {
-                Text("8 months")
-                    .font(.system(size: 36, weight: .bold, design: .rounded))
-                    .foregroundColor(HrtWidgetColors.accent)
-                Text("on HRT")
+                Text("Time on HRT")
                     .font(.headline)
-                    .foregroundColor(.secondary)
+
+                Spacer(minLength: 0)
             }
 
-            VStack(alignment: .leading, spacing: 7) {
-                HStack {
-                    Text("First year")
-                    Spacer()
-                    Text("67%")
-                        .foregroundColor(.secondary)
+            Spacer(minLength: 16)
+
+            Text(entry.durationText)
+                .font(.system(size: 42, weight: .bold, design: .rounded))
+                .foregroundColor(.primary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.55)
+
+            Text("YOUR JOURNEY SO FAR")
+                .font(.caption2.weight(.semibold))
+                .foregroundColor(.secondary)
+                .tracking(0.7)
+                .padding(.top, 4)
+
+            Spacer(minLength: 18)
+
+            if entry.showsIntakes {
+                HStack(spacing: 12) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.title2)
+                        .foregroundColor(HrtWidgetColors.accent)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("\(entry.intakeCount)")
+                            .font(.title2.weight(.semibold))
+                        Text(entry.intakeCount == 1 ? "Intake logged" : "Intakes logged")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+
+                    Spacer(minLength: 0)
                 }
-                .font(.caption.weight(.semibold))
-
-                ProgressView(value: 8, total: 12)
-                    .tint(HrtWidgetColors.accent)
-
-                Text("4 months until your one-year milestone")
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-            }
-
-            Divider()
-
-            HStack(spacing: 12) {
-                metricCard(value: "16", label: "Intakes", symbol: "checkmark.circle.fill")
-                metricCard(value: "Jan 21", label: "Started", symbol: "calendar")
+                .padding(14)
+                .background(HrtWidgetColors.accentSoft.opacity(0.42))
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             }
         }
         .padding(18)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(
-            "Your HRT journey. 8 months on HRT. 16 intakes. Started January 21."
-        )
+        .accessibilityLabel(accessibilitySummary)
     }
 
     @ViewBuilder
@@ -187,54 +266,49 @@ struct HrtWidgetEntryView: View {
         .frame(width: size, height: size)
     }
 
-    private func metricCard(value: String, label: String, symbol: String) -> some View {
-        HStack(spacing: 9) {
-            Image(systemName: symbol)
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundColor(HrtWidgetColors.accent)
-
-            VStack(alignment: .leading, spacing: 1) {
-                Text(value)
-                    .font(.headline)
-                Text(label)
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-            }
-
-            Spacer(minLength: 0)
+    private var accessibilitySummary: String {
+        var summary = "On HRT for \(entry.durationText)."
+        if entry.showsIntakes {
+            summary += " \(entry.intakeText)."
         }
-        .padding(10)
-        .background(HrtWidgetColors.accentSoft.opacity(0.45))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        return summary
     }
 
     @available(iOSApplicationExtension 16.0, *)
     @ViewBuilder
     private var accessoryWidget: some View {
         if family == .accessoryCircular {
-            Gauge(value: 8, in: 0 ... 12) {
-                Image(systemName: "cross.case.fill")
-            } currentValueLabel: {
-                Text("8m")
+            VStack(spacing: 0) {
+                Image(systemName: "calendar")
+                    .font(.caption2)
+                Text("\(entry.durationValue)\(entry.durationUnit.compactLabel)")
                     .font(.system(.body, design: .rounded).weight(.bold))
+                    .minimumScaleFactor(0.65)
             }
-            .gaugeStyle(.accessoryCircular)
             .widgetAccentable()
-            .accessibilityLabel("8 months on HRT")
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("\(entry.durationText) on HRT")
         } else if family == .accessoryRectangular {
             VStack(alignment: .leading, spacing: 2) {
                 Label("On HRT", systemImage: "calendar")
                     .font(.headline)
                     .widgetAccentable()
-                Text("8 months • 16 intakes")
+                Text(entry.showsIntakes
+                    ? "\(entry.durationText) • \(entry.intakeCount) intakes"
+                    : entry.durationText)
                     .font(.caption)
                     .lineLimit(1)
             }
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("On HRT for 8 months. 16 intakes logged.")
+            .accessibilityLabel(accessibilitySummary)
         } else {
-            Label("8 months on HRT • 16 intakes", systemImage: "cross.case.fill")
-                .accessibilityLabel("8 months on HRT. 16 intakes logged.")
+            Label(
+                entry.showsIntakes
+                    ? "\(entry.durationText) on HRT • \(entry.intakeCount) intakes"
+                    : "\(entry.durationText) on HRT",
+                systemImage: "cross.case.fill"
+            )
+            .accessibilityLabel(accessibilitySummary)
         }
     }
 }
@@ -275,7 +349,7 @@ struct HrtWidget: Widget {
             HrtWidgetEntryView(entry: entry)
         }
         .configurationDisplayName("Time on HRT")
-        .description("See your HRT duration, logged intakes, and milestones.")
+        .description("See your HRT duration and logged intakes at a glance.")
         .supportedFamilies(supportedFamilies)
     }
 }
