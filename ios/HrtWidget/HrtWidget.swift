@@ -137,39 +137,28 @@ struct HrtWidgetEntryView: View {
 
     private var smallWidget: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: 7) {
-                Image(systemName: "calendar")
-                    .font(.caption.weight(.semibold))
-                    .foregroundColor(HrtWidgetColors.accent)
-
-                Text("TIME ON HRT")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundColor(.secondary)
-                    .tracking(0.4)
-            }
+            Label("Time on HRT", systemImage: "calendar")
+                .font(.caption.weight(.semibold))
+                .foregroundColor(HrtWidgetColors.accent)
 
             Spacer(minLength: 8)
 
             Text(entry.durationText)
-                .font(.system(size: 29, weight: .bold, design: .rounded))
+                .font(.system(size: 32, weight: .bold, design: .rounded))
                 .foregroundColor(.primary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.52)
 
             if entry.showsIntakes {
-                Label(entry.intakeText, systemImage: "checkmark.circle.fill")
-                    .font(.caption2.weight(.medium))
-                    .foregroundColor(HrtWidgetColors.accent)
+                Text(entry.intakeText)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 5)
-                    .background(HrtWidgetColors.accentSoft.opacity(0.5))
-                    .clipShape(Capsule())
-                    .padding(.top, 8)
+                    .padding(.top, 4)
             }
         }
-        .padding(14)
+        .monaContentMargins()
         .accessibilityElement(children: .combine)
         .accessibilityLabel(accessibilitySummary)
     }
@@ -195,7 +184,7 @@ struct HrtWidgetEntryView: View {
 
             Spacer(minLength: 0)
         }
-        .padding(16)
+        .monaContentMargins()
         .accessibilityElement(children: .combine)
         .accessibilityLabel(accessibilitySummary)
     }
@@ -219,23 +208,24 @@ struct HrtWidgetEntryView: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.55)
 
-            Text("YOUR JOURNEY SO FAR")
-                .font(.caption2.weight(.semibold))
+            Text("On HRT")
+                .font(.subheadline)
                 .foregroundColor(.secondary)
-                .tracking(0.7)
-                .padding(.top, 4)
+                .padding(.top, 2)
 
             Spacer(minLength: 18)
 
             if entry.showsIntakes {
+                Divider()
+
                 HStack(spacing: 12) {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.title2)
+                        .font(.title3)
                         .foregroundColor(HrtWidgetColors.accent)
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text("\(entry.intakeCount)")
-                            .font(.title2.weight(.semibold))
+                            .font(.title3.weight(.semibold))
                         Text(entry.intakeCount == 1 ? "Intake logged" : "Intakes logged")
                             .font(.caption)
                             .foregroundColor(.secondary)
@@ -243,12 +233,10 @@ struct HrtWidgetEntryView: View {
 
                     Spacer(minLength: 0)
                 }
-                .padding(14)
-                .background(HrtWidgetColors.accentSoft.opacity(0.42))
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .padding(.top, 12)
             }
         }
-        .padding(18)
+        .monaContentMargins()
         .accessibilityElement(children: .combine)
         .accessibilityLabel(accessibilitySummary)
     }
@@ -314,6 +302,15 @@ struct HrtWidgetEntryView: View {
 }
 
 private extension View {
+    @ViewBuilder
+    func monaContentMargins() -> some View {
+        if #available(iOSApplicationExtension 17.0, *) {
+            self
+        } else {
+            padding(16)
+        }
+    }
+
     @ViewBuilder
     func monaWidgetBackground(for family: WidgetFamily) -> some View {
         if #available(iOSApplicationExtension 17.0, *) {
