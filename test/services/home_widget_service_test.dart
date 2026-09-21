@@ -1,3 +1,4 @@
+import 'package:clock/clock.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
@@ -40,6 +41,11 @@ void main() {
       (name: 'first date', id: 'hrt_first_date', data: '2026-01-05'),
       (name: 'locale', id: 'app_locale', data: 'fr'),
       (name: 'intake count', id: 'hrt_intake_count', data: '3'),
+      (
+        name: 'recent intake counts',
+        id: 'hrt_recent_intake_counts',
+        data: '0,0,0,0,0,0,0'
+      ),
     ];
     for (final c in keyCases) {
       test('saves the ${c.name} under its shared key', () async {
@@ -58,6 +64,37 @@ void main() {
         expect(saved, contains(equals({'id': c.id, 'data': c.data})));
       });
     }
+
+    test('saves seven daily intake counts from oldest to newest', () async {
+      // Arrange
+      final service = HomeWidgetService(
+        saveWidgetData: (id, data) async => saved.add({'id': id, 'data': data}),
+        setAppGroupId: (groupId) async => appGroups.add(groupId),
+        updateWidget: ({iOSName, qualifiedAndroidName}) async => updated.add(
+          (iOSName: iOSName, qualifiedAndroidName: qualifiedAndroidName),
+        ),
+      );
+      when(intakeProvider.takenIntakes).thenReturn([
+        aMedicationIntake(),
+        aMedicationIntake(),
+        aMedicationIntake(),
+      ]);
+
+      // Act
+      await withClock(
+        Clock.fixed(DateTime.utc(2025, 1, 6, 12)),
+        () => service.sync(intakeProvider, localeProvider),
+      );
+
+      // Assert
+      expect(
+        saved,
+        contains(equals({
+          'id': 'hrt_recent_intake_counts',
+          'data': '3,0,0,0,0,0,0',
+        })),
+      );
+    });
 
     test('updates the Glance receiver', () async {
       // Arrange

@@ -52,13 +52,27 @@ class HomeWidgetService {
       firstDate: medicationIntakeProvider.firstTakenLocalDate,
       locale: localeProvider.locale,
       intakeCount: medicationIntakeProvider.takenIntakes.length,
+      recentIntakeCounts: _recentIntakeCounts(medicationIntakeProvider),
     );
+  }
+
+  List<int> _recentIntakeCounts(
+    MedicationIntakeProvider medicationIntakeProvider,
+  ) {
+    final today = Date.today();
+    return List.generate(7, (index) {
+      final date = today.subtract(Duration(days: 6 - index));
+      return medicationIntakeProvider.takenIntakes
+          .where((intake) => intake.takenLocalDate == date)
+          .length;
+    });
   }
 
   Future<void> syncHrtTimeWidget({
     required Date? firstDate,
     required Locale locale,
     required int intakeCount,
+    required List<int> recentIntakeCounts,
   }) async {
     final supported = isPlatformSupported?.call() ?? isMobile;
     if (!supported) return;
@@ -74,6 +88,10 @@ class HomeWidgetService {
     await _saveWidgetData('hrt_first_date', firstDateIso);
     await _saveWidgetData('app_locale', locale.toLanguageTag());
     await _saveWidgetData('hrt_intake_count', intakeCount.toString());
+    await _saveWidgetData(
+      'hrt_recent_intake_counts',
+      recentIntakeCounts.join(','),
+    );
     await _updateWidget(
       iOSName: _iOSName,
       qualifiedAndroidName: _qualifiedAndroidName,
