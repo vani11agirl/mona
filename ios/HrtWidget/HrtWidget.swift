@@ -13,8 +13,6 @@ private enum HrtWidgetColors {
     // Keeps Mona's Android widget palette, expressed through native iOS shapes
     // and semantic foreground colors.
     static let accent = Color(red: 103.0 / 255.0, green: 80.0 / 255.0, blue: 164.0 / 255.0)
-    static let accentSoft = Color(red: 255.0 / 255.0, green: 216.0 / 255.0, blue: 228.0 / 255.0)
-    static let accentOnSoft = Color(red: 49.0 / 255.0, green: 17.0 / 255.0, blue: 29.0 / 255.0)
 }
 
 fileprivate enum HrtDurationUnit: String {
@@ -44,6 +42,7 @@ struct HrtWidgetEntry: TimelineEntry {
     fileprivate let durationUnit: HrtDurationUnit
     let intakeCount: Int
     let showsIntakes: Bool
+    let recentIntakeCounts: [Int]
 
     fileprivate var durationText: String {
         "\(durationValue) \(durationUnit.label(for: durationValue))"
@@ -58,7 +57,8 @@ struct HrtWidgetEntry: TimelineEntry {
         durationValue: 8,
         durationUnit: .months,
         intakeCount: 16,
-        showsIntakes: true
+        showsIntakes: true,
+        recentIntakeCounts: [0, 1, 0, 2, 1, 0, 3]
     )
 }
 
@@ -92,6 +92,15 @@ struct HrtWidgetProvider: TimelineProvider {
         let storedValue = defaults.integer(forKey: "preview_duration_value")
         let storedUnit = defaults.string(forKey: "preview_duration_unit")
         let storedIntakes = defaults.integer(forKey: "preview_intake_count")
+        let storedRecentCounts = defaults.string(
+            forKey: "preview_recent_intake_counts"
+        )
+        let recentCounts = storedRecentCounts?
+            .split(separator: ",")
+            .map { max(0, Int($0) ?? 0) }
+        let normalizedRecentCounts = recentCounts?.count == 7
+            ? recentCounts ?? []
+            : HrtWidgetEntry.sample.recentIntakeCounts
 
         return HrtWidgetEntry(
             date: Date(),
@@ -102,7 +111,8 @@ struct HrtWidgetProvider: TimelineProvider {
                 : max(0, storedIntakes),
             showsIntakes: defaults.object(forKey: "preview_show_intakes") == nil
                 ? true
-                : defaults.bool(forKey: "preview_show_intakes")
+                : defaults.bool(forKey: "preview_show_intakes"),
+            recentIntakeCounts: normalizedRecentCounts
         )
         #else
         return .sample
@@ -164,25 +174,40 @@ struct HrtWidgetEntryView: View {
     }
 
     private var mediumWidget: some View {
-        HStack(spacing: 12) {
-            symbolBadge(size: 48, symbolSize: 24)
+        VStack(alignment: .leading, spacing: 0) {
+            Label("HRT summary", systemImage: "calendar")
+                .font(.caption.weight(.semibold))
+                .foregroundColor(HrtWidgetColors.accent)
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text("On HRT for \(entry.durationText)")
-                    .font(.system(size: 18, weight: .medium))
-                    .foregroundColor(.primary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
+            Spacer(minLength: 12)
+
+            HStack(alignment: .bottom, spacing: 28) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(entry.durationText)
+                        .font(.title2.weight(.bold))
+                        .foregroundColor(.primary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+
+                    Text("Time on HRT")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
 
                 if entry.showsIntakes {
-                    Text(entry.intakeText)
-                        .font(.system(size: 13))
-                        .foregroundColor(.secondary)
-                        .lineLimit(1)
-                }
-            }
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("\(entry.intakeCount)")
+                            .font(.title2.weight(.bold))
+                            .foregroundColor(.primary)
 
-            Spacer(minLength: 0)
+                        Text(entry.intakeCount == 1 ? "Intake logged" : "Intakes logged")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+
+                Spacer(minLength: 0)
+            }
         }
         .monaContentMargins()
         .accessibilityElement(children: .combine)
@@ -191,67 +216,124 @@ struct HrtWidgetEntryView: View {
 
     private var largeWidget: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: 10) {
-                symbolBadge(size: 38, symbolSize: 18)
+            Label("HRT summary", systemImage: "calendar")
+                .font(.caption.weight(.semibold))
+                .foregroundColor(HrtWidgetColors.accent)
 
-                Text("Time on HRT")
-                    .font(.headline)
+            HStack(alignment: .bottom, spacing: 24) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(entry.durationText)
+                        .font(.system(size: 34, weight: .bold, design: .rounded))
+                        .foregroundColor(.primary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                    Text("Time on HRT")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
 
-                Spacer(minLength: 0)
-            }
-
-            Spacer(minLength: 16)
-
-            Text(entry.durationText)
-                .font(.system(size: 42, weight: .bold, design: .rounded))
-                .foregroundColor(.primary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.55)
-
-            Text("On HRT")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-                .padding(.top, 2)
-
-            Spacer(minLength: 18)
-
-            if entry.showsIntakes {
-                Divider()
-
-                HStack(spacing: 12) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.title3)
-                        .foregroundColor(HrtWidgetColors.accent)
-
+                if entry.showsIntakes {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("\(entry.intakeCount)")
-                            .font(.title3.weight(.semibold))
+                            .font(.system(size: 34, weight: .bold, design: .rounded))
                         Text(entry.intakeCount == 1 ? "Intake logged" : "Intakes logged")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
-
-                    Spacer(minLength: 0)
                 }
-                .padding(.top, 12)
+
+                Spacer(minLength: 0)
             }
+            .padding(.top, 14)
+
+            Divider()
+                .padding(.vertical, 13)
+
+            HStack(alignment: .firstTextBaseline) {
+                Text("Recent intakes")
+                    .font(.headline)
+                Spacer(minLength: 8)
+                Text("Last 7 days")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+
+            recentActivityGraph
+                .padding(.top, 8)
         }
         .monaContentMargins()
         .accessibilityElement(children: .combine)
         .accessibilityLabel(accessibilitySummary)
     }
 
-    @ViewBuilder
-    private func symbolBadge(size: CGFloat, symbolSize: CGFloat) -> some View {
-        ZStack {
-            Circle()
-                .fill(HrtWidgetColors.accentSoft)
+    private var recentActivityGraph: some View {
+        GeometryReader { geometry in
+            let maximum = max(entry.recentIntakeCounts.max() ?? 0, 1)
 
-            Image(systemName: "calendar")
-                .font(.system(size: symbolSize, weight: .medium))
-                .foregroundColor(HrtWidgetColors.accentOnSoft)
+            HStack(alignment: .bottom, spacing: 7) {
+                ForEach(entry.recentIntakeCounts.indices, id: \.self) { index in
+                    let count = entry.recentIntakeCounts[index]
+
+                    VStack(spacing: 4) {
+                        Spacer(minLength: 0)
+
+                        if count > 0 {
+                            Text("\(count)")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                        }
+
+                        Rectangle()
+                            .fill(
+                                count == 0
+                                    ? HrtWidgetColors.accent.opacity(0.16)
+                                    : HrtWidgetColors.accent
+                            )
+                            .frame(
+                                height: count == 0
+                                    ? 2
+                                    : max(
+                                        8,
+                                        (geometry.size.height - 30)
+                                            * CGFloat(count)
+                                            / CGFloat(maximum)
+                                    )
+                            )
+
+                        Text(dayLabel(for: index))
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+            }
         }
-        .frame(width: size, height: size)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(recentActivityAccessibilityLabel)
+    }
+
+    private func dayLabel(for index: Int) -> String {
+        let daysAgo = 6 - index
+        guard let date = Calendar.current.date(
+            byAdding: .day,
+            value: -daysAgo,
+            to: entry.date
+        ) else {
+            return ""
+        }
+
+        let formatter = DateFormatter()
+        formatter.locale = .current
+        formatter.setLocalizedDateFormatFromTemplate("EEEEE")
+        return formatter.string(from: date)
+    }
+
+    private var recentActivityAccessibilityLabel: String {
+        let values = entry.recentIntakeCounts.indices.map { index in
+            let count = entry.recentIntakeCounts[index]
+            return "\(dayLabel(for: index)), \(count) \(count == 1 ? "intake" : "intakes")"
+        }
+        return "Recent intake activity. \(values.joined(separator: ", "))."
     }
 
     private var accessibilitySummary: String {
