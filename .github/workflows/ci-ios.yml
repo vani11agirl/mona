@@ -1,0 +1,89 @@
+name: CI - iOS
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/ci-ios.yml"
+      - ".fvmrc"
+      - "assets/**"
+      - "ios/**"
+      - "lib/**"
+      - "pubspec.lock"
+      - "pubspec.yaml"
+
+permissions:
+  contents: read
+
+jobs:
+  build-test-ipa:
+    name: Build unsigned test IPA
+    runs-on: macos-15
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version-file: .fvmrc
+          cache: true
+
+      - name: Show Apple toolchain
+        run: |
+          sw_vers
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-version
+
+      - name: Resolve Flutter dependencies
+        run: flutter pub get
+
+      - name: Build unsigned iOS app
+        shell: bash
+        run: |
+          set -o pipefail
+          flutter build ios --release --no-codesign 2>&1 | tee ios-build.log
+
+      - name: Verify widget is embedded
+        shell: bash
+        run: |
+          app="build/ios/iphoneos/Runner.app"
+          widget="$app/PlugIns/HrtWidgetExtension.appex"
+
+          test -d "$app"
+          test -d "$widget"
+
+          app_id=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$app/Info.plist")
+          widget_id=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$widget/Info.plist")
+
+          test "$app_id" = "com.deliacheminot.mona"
+          test "$widget_id" = "com.deliacheminot.mona.HrtWidget"
+
+          echo "Verified $widget_id inside $app_id"
+
+      - name: Package unsigned test IPA
+        id: package
+        shell: bash
+        run: |
+          short_sha="${GITHUB_SHA:0:7}"
+          staging="$RUNNER_TEMP/mona-test-ipa"
+          ipa="build/ios/mona-ios-test-$short_sha.ipa"
+
+          mkdir -p "$staging/Payload"
+          ditto "build/ios/iphoneos/Runner.app" "$staging/Payload/Runner.app"
+          (cd "$staging" && /usr/bin/zip -qry "$GITHUB_WORKSPACE/$ipa" Payload)
+
+          echo "path=$ipa" >> "$GITHUB_OUTPUT"
+
+      - name: Upload unsigned test IPA
+        uses: actions/upload-artifact@v6
+        with:
+          name: ios-test-ipa-${{ github.run_number }}
+          path: |
+            ${{ steps.package.outputs.path }}
+            ios-build.log
+          if-no-files-found: error
+          retention-days: 7
