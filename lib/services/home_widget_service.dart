@@ -8,6 +8,7 @@ import 'package:mona/data/providers/medication_intake_provider.dart';
 import 'package:mona/data/providers/medication_schedule_provider.dart';
 import 'package:mona/distribution.dart';
 import 'package:mona/i18n/locale_provider.dart';
+import 'package:mona/i18n/translations.g.dart';
 
 typedef SaveWidgetData = Future<void> Function(String id, String? data);
 typedef SetAppGroupId = Future<void> Function(String groupId);
@@ -103,6 +104,13 @@ class HomeWidgetService {
     final isIOS = isIOSPlatform?.call() ?? false;
     if (isIOS) {
       await _setAppGroupId(appGroupId);
+      final strings = AppLocaleUtils.parse(locale.toLanguageTag()).buildSync();
+      await _saveWidgetData('widget_home_title', strings.HrtCounter);
+      await _saveWidgetData(
+        'widget_home_intakes',
+        strings.intakesLoggedCount(count: intakeCount),
+      );
+      await _saveWidgetData('widget_home_empty', strings.neverTakenYet);
       await _saveWidgetData('next_intake_date', _dateString(nextIntake?.date));
       await _saveWidgetData(
         'next_intake_due_at_ms',

@@ -156,6 +156,39 @@ void main() {
       expect(appGroups, ['group.com.deliacheminot.mona']);
     });
 
+    test('shares translated Home Screen copy for the real intake count',
+        () async {
+      HomeWidgetService.isIOSPlatform = () => true;
+      final service = HomeWidgetService(
+        saveWidgetData: (id, data) async => saved.add({'id': id, 'data': data}),
+        setAppGroupId: (groupId) async => appGroups.add(groupId),
+        updateWidget: ({iOSName, qualifiedAndroidName}) async => updated.add(
+          (iOSName: iOSName, qualifiedAndroidName: qualifiedAndroidName),
+        ),
+      );
+
+      await service.sync(intakeProvider, scheduleProvider, localeProvider);
+
+      expect(
+          saved,
+          contains(equals({
+            'id': 'widget_home_title',
+            'data': 'Temps sous THS',
+          })));
+      expect(
+          saved,
+          contains(equals({
+            'id': 'widget_home_intakes',
+            'data': '3 prises enregistrées',
+          })));
+      expect(
+          saved,
+          contains(equals({
+            'id': 'widget_home_empty',
+            'data': 'Jamais pris auparavant',
+          })));
+    });
+
     test('shares an exact due instant for a timed daily intake', () async {
       HomeWidgetService.isIOSPlatform = () => true;
       final date = Date(year: 2026, month: 6, day: 1);

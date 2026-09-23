@@ -103,51 +103,53 @@ private struct NextIntakeCountdown {
         return (minutes / (24 * 60), .days)
     }
 
-    var rectangularText: String {
+    func rectangularText(copy: WidgetCopy) -> String {
         if remainingMinutes == 0 {
-            return dateOnly ? "Today" : "Now"
+            return dateOnly ? copy.today : copy.now
         }
-        let duration = shortDuration
-        return remainingMinutes < 0 ? "\(duration) ago" : "in \(duration)"
+        if abs(remainingMinutes) >= 24 * 60 {
+            let signedValue = remainingMinutes < 0 ? -display.value : display.value
+            return copy.relative(display.unit.components(value: signedValue), abbreviated: true)
+        }
+        let duration = shortDuration(copy: copy)
+        return remainingMinutes < 0 ? copy.past(duration) : copy.future(duration)
     }
 
-    var accessibilityLabel: String {
+    func accessibilityLabel(copy: WidgetCopy) -> String {
         if remainingMinutes == 0 {
-            return dateOnly ? "Intake due today" : "Intake due now"
+            return "\(copy.intakeDue), \(dateOnly ? copy.today : copy.now)"
         }
-        let duration = spokenDuration
-        return remainingMinutes < 0
-            ? "Intake overdue by \(duration)"
-            : "Next intake in \(duration)"
+        let time: String
+        if abs(remainingMinutes) >= 24 * 60 {
+            let signedValue = remainingMinutes < 0 ? -display.value : display.value
+            time = copy.relative(display.unit.components(value: signedValue), abbreviated: false)
+        } else {
+            let duration = spokenDuration(copy: copy)
+            time = remainingMinutes < 0 ? copy.past(duration) : copy.future(duration)
+        }
+        return "\(remainingMinutes < 0 ? copy.intakeDue : copy.nextIntake), \(time)"
     }
 
-    private var shortDuration: String {
+    private func shortDuration(copy: WidgetCopy) -> String {
         let minutes = abs(remainingMinutes)
         if minutes < 60 {
-            return "\(minutes) min"
+            return copy.duration(DateComponents(minute: minutes), units: .minute, abbreviated: true)
         }
-        if minutes < 24 * 60 {
-            let hours = minutes / 60
-            let extraMinutes = minutes % 60
-            return extraMinutes == 0 ? "\(hours)h" : "\(hours)h \(extraMinutes)m"
-        }
-        return "\(display.value) \(display.unit.label(for: display.value))"
+        return copy.duration(
+            DateComponents(hour: minutes / 60, minute: minutes % 60),
+            units: [.hour, .minute], abbreviated: true
+        )
     }
 
-    private var spokenDuration: String {
+    private func spokenDuration(copy: WidgetCopy) -> String {
         let minutes = abs(remainingMinutes)
         if minutes < 60 {
-            return "\(minutes) \(Unit.minutes.label(for: minutes))"
+            return copy.duration(DateComponents(minute: minutes), units: .minute, abbreviated: false)
         }
-        if minutes < 24 * 60 {
-            let hours = minutes / 60
-            let extraMinutes = minutes % 60
-            let hourText = "\(hours) \(Unit.hours.label(for: hours))"
-            return extraMinutes == 0
-                ? hourText
-                : "\(hourText) and \(extraMinutes) \(Unit.minutes.label(for: extraMinutes))"
-        }
-        return "\(display.value) \(display.unit.label(for: display.value))"
+        return copy.duration(
+            DateComponents(hour: minutes / 60, minute: minutes % 60),
+            units: [.hour, .minute], abbreviated: false
+        )
     }
 
     enum Unit: String {
@@ -156,6 +158,26 @@ private struct NextIntakeCountdown {
         case days
         case weeks
         case months
+
+        func components(value: Int) -> DateComponents {
+            switch self {
+            case .minutes: return DateComponents(minute: value)
+            case .hours: return DateComponents(hour: value)
+            case .days: return DateComponents(day: value)
+            case .weeks: return DateComponents(weekOfMonth: value)
+            case .months: return DateComponents(month: value)
+            }
+        }
+
+        var calendarUnit: NSCalendar.Unit {
+            switch self {
+            case .minutes: return .minute
+            case .hours: return .hour
+            case .days: return .day
+            case .weeks: return .weekOfMonth
+            case .months: return .month
+            }
+        }
 
         func label(for value: Int) -> String {
             value == 1 ? String(rawValue.dropLast()) : rawValue
@@ -202,6 +224,15 @@ fileprivate enum HrtDurationUnit: String {
     case months
     case years
 
+    func components(value: Int) -> (DateComponents, NSCalendar.Unit) {
+        switch self {
+        case .days: return (DateComponents(day: value), .day)
+        case .weeks: return (DateComponents(weekOfMonth: value), .weekOfMonth)
+        case .months: return (DateComponents(month: value), .month)
+        case .years: return (DateComponents(year: value), .year)
+        }
+    }
+
     func label(for value: Int) -> String {
         guard value == 1 else { return rawValue }
         return String(rawValue.dropLast())
@@ -225,13 +256,20 @@ struct HrtWidgetEntry: TimelineEntry {
     let showsIntakes: Bool
     let recentIntakeCounts: [Int]
     fileprivate let nextIntake: NextIntakeSnapshot?
+    let localeIdentifier: String
+    let homeTitle: String
+    let homeIntakeText: String
+
+    fileprivate var copy: WidgetCopy { WidgetCopy(localeIdentifier: localeIdentifier) }
 
     fileprivate var durationText: String {
-        "\(durationValue) \(durationUnit.label(for: durationValue))"
+        let (components, units) = durationUnit.components(value: durationValue)
+        let localized = copy.duration(components, units: units, abbreviated: false)
+        return localized.isEmpty ? "\(durationValue) \(durationUnit.label(for: durationValue))" : localized
     }
 
     fileprivate var intakeText: String {
-        "\(intakeCount.formatted()) \(intakeCount == 1 ? "intake" : "intakes") logged"
+        homeIntakeText
     }
 
     fileprivate static let sample = HrtWidgetEntry(
@@ -241,7 +279,10 @@ struct HrtWidgetEntry: TimelineEntry {
         intakeCount: 16,
         showsIntakes: true,
         recentIntakeCounts: [0, 1, 0, 2, 1, 0, 3],
-        nextIntake: .sample
+        nextIntake: .sample,
+        localeIdentifier: Locale.current.identifier,
+        homeTitle: "Time on HRT",
+        homeIntakeText: "16 intakes logged"
     )
 }
 
@@ -304,14 +345,19 @@ struct HrtWidgetProvider: TimelineProvider {
     }
 
     private func sampleEntry(at date: Date, nextIntake: NextIntakeSnapshot?) -> HrtWidgetEntry {
-        HrtWidgetEntry(
+        let defaults = UserDefaults(suiteName: appGroupID)
+        return HrtWidgetEntry(
             date: date,
             durationValue: HrtWidgetEntry.sample.durationValue,
             durationUnit: HrtWidgetEntry.sample.durationUnit,
             intakeCount: HrtWidgetEntry.sample.intakeCount,
             showsIntakes: HrtWidgetEntry.sample.showsIntakes,
             recentIntakeCounts: HrtWidgetEntry.sample.recentIntakeCounts,
-            nextIntake: nextIntake
+            nextIntake: nextIntake,
+            localeIdentifier: defaults?.string(forKey: "app_locale") ?? Locale.current.identifier,
+            homeTitle: defaults?.string(forKey: "widget_home_title") ?? "Time on HRT",
+            homeIntakeText: defaults?.string(forKey: "widget_home_sample_intakes")
+                ?? "16 intakes logged"
         )
     }
 
@@ -347,7 +393,11 @@ struct HrtWidgetProvider: TimelineProvider {
                 ? true
                 : defaults.bool(forKey: "preview_show_intakes"),
             recentIntakeCounts: normalizedRecentCounts,
-            nextIntake: nextIntake
+            nextIntake: nextIntake,
+            localeIdentifier: defaults.string(forKey: "app_locale") ?? Locale.current.identifier,
+            homeTitle: defaults.string(forKey: "widget_home_title") ?? "Time on HRT",
+            homeIntakeText: defaults.string(forKey: "widget_home_sample_intakes")
+                ?? "16 intakes logged"
         )
         #else
         return sampleEntry(at: date, nextIntake: nextIntake)
@@ -383,7 +433,7 @@ struct HrtWidgetEntryView: View {
 
     private var smallWidget: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Label("Time on HRT", systemImage: "calendar")
+            Label(entry.homeTitle, systemImage: "calendar")
                 .font(.caption.weight(.semibold))
                 .foregroundColor(
                     colorScheme == .dark ? HrtWidgetColors.darkAccent : HrtWidgetColors.accent
@@ -427,7 +477,7 @@ struct HrtWidgetEntryView: View {
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
 
-                    Text("Time on HRT")
+                    Text(entry.homeTitle)
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -465,7 +515,7 @@ struct HrtWidgetEntryView: View {
                         .foregroundColor(.primary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.6)
-                    Text("Time on HRT")
+                    Text(entry.homeTitle)
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -575,7 +625,7 @@ struct HrtWidgetEntryView: View {
     }
 
     private var accessibilitySummary: String {
-        var summary = "On HRT for \(entry.durationText)."
+        var summary = "\(entry.homeTitle), \(entry.durationText)."
         if entry.showsIntakes {
             summary += " \(entry.intakeText)."
         }
@@ -587,8 +637,9 @@ struct HrtWidgetEntryView: View {
     }
 
     private var accessoryTitle: String {
-        guard let countdown else { return "NEXT INTAKE" }
-        return countdown.remainingMinutes <= 0 ? "INTAKE DUE" : "NEXT INTAKE"
+        guard let countdown else { return entry.copy.nextIntake.uppercased(with: entry.copy.locale) }
+        let title = countdown.remainingMinutes <= 0 ? entry.copy.intakeDue : entry.copy.nextIntake
+        return title.uppercased(with: entry.copy.locale)
     }
 
     @available(iOSApplicationExtension 16.0, *)
@@ -600,24 +651,33 @@ struct HrtWidgetEntryView: View {
                     value: Double(max(0, min(countdown.remainingMinutes, countdown.intervalMinutes))),
                     in: 0...Double(countdown.intervalMinutes)
                 ) {
-                    Text("Next intake")
+                    Text(entry.copy.nextIntake)
                 } currentValueLabel: {
                     VStack(spacing: -3) {
                         if countdown.remainingMinutes == 0 {
-                            Text("DUE")
+                            Text(entry.copy.due.uppercased(with: entry.copy.locale))
                                 .font(.system(size: 17, weight: .semibold, design: .rounded))
                         } else {
                             Text(countdown.remainingMinutes < 0
-                                ? "\(countdown.display.value)\(countdown.display.unit.shortSuffix)"
+                                ? entry.copy.duration(
+                                    countdown.display.unit.components(value: countdown.display.value),
+                                    units: countdown.display.unit.calendarUnit,
+                                    abbreviated: true
+                                )
                                 : "\(countdown.display.value)")
                                 .font(.system(size: 25, weight: .medium, design: .rounded))
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.7)
                         }
-                        Text(countdown.remainingMinutes < 0 ? "LATE"
+                        Text(countdown.remainingMinutes < 0
+                            ? entry.copy.late.uppercased(with: entry.copy.locale)
                             : countdown.remainingMinutes == 0
-                                ? (countdown.dateOnly ? "TODAY" : "NOW")
-                                : countdown.display.unit.circularLabel(for: countdown.display.value))
+                                ? (countdown.dateOnly ? entry.copy.today : entry.copy.now)
+                                    .uppercased(with: entry.copy.locale)
+                                : entry.copy.circularUnit(
+                                    countdown.display.unit.components(value: countdown.display.value),
+                                    units: countdown.display.unit.calendarUnit
+                                ))
                             .font(.system(size: 10, weight: .medium, design: .rounded))
                             .lineLimit(1)
                             .minimumScaleFactor(0.8)
@@ -626,28 +686,28 @@ struct HrtWidgetEntryView: View {
                 .gaugeStyle(.accessoryCircularCapacity)
                 .widgetAccentable()
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel(countdown.accessibilityLabel)
+                .accessibilityLabel(countdown.accessibilityLabel(copy: entry.copy))
             } else {
                 Gauge(value: 0, in: 0...1) {
-                    Text("Next intake")
+                    Text(entry.copy.nextIntake)
                 } currentValueLabel: {
                     VStack(spacing: -3) {
                         Text("—")
                             .font(.system(size: 25, weight: .medium, design: .rounded))
-                        Text("NO PLAN")
+                        Text(entry.copy.noPlan.uppercased(with: entry.copy.locale))
                             .font(.system(size: 10, weight: .medium, design: .rounded))
                     }
                 }
                 .gaugeStyle(.accessoryCircularCapacity)
                 .widgetAccentable()
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel("No scheduled intake")
+                .accessibilityLabel(entry.copy.noSchedule)
             }
         } else if family == .accessoryRectangular {
             VStack(alignment: .leading, spacing: 2) {
                 Text(accessoryTitle)
                     .font(.caption2.weight(.semibold))
-                Text(countdown?.rectangularText ?? "No schedule")
+                Text(countdown?.rectangularText(copy: entry.copy) ?? entry.copy.noSchedule)
                     .font(.system(size: 21, weight: .semibold, design: .rounded))
                     .lineLimit(1)
                     .minimumScaleFactor(0.75)
@@ -656,7 +716,8 @@ struct HrtWidgetEntryView: View {
             .padding(.leading, 8)
             .widgetAccentable()
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel(countdown?.accessibilityLabel ?? "No scheduled intake")
+            .accessibilityLabel(countdown?.accessibilityLabel(copy: entry.copy)
+                ?? entry.copy.noSchedule)
         } else {
             EmptyView()
         }
