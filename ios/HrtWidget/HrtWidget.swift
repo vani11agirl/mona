@@ -3,6 +3,9 @@ import WidgetKit
 
 private let widgetKind = "HrtWidget"
 
+private let sampleNextIntakeHours = 3
+private let sampleNextIntakeMinutes = 20
+
 #if WIDGET_PREVIEW
 private let previewAppGroup = Bundle.main.object(
     forInfoDictionaryKey: "PreviewAppGroup"
@@ -353,37 +356,37 @@ struct HrtWidgetEntryView: View {
     private var accessoryWidget: some View {
         if family == .accessoryCircular {
             VStack(spacing: 0) {
-                Image(systemName: "calendar")
+                Image(systemName: "clock")
                     .font(.caption2)
-                Text("\(entry.durationValue)\(entry.durationUnit.compactLabel)")
-                    .font(.system(.body, design: .rounded).weight(.bold))
-                    .minimumScaleFactor(0.65)
+                Text("\(sampleNextIntakeHours)h")
+                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                Text("\(sampleNextIntakeMinutes)m")
+                    .font(.caption2.weight(.semibold))
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .widgetAccentable()
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel("\(entry.durationText) on HRT")
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(sampleNextIntakeAccessibilityLabel)
         } else if family == .accessoryRectangular {
             VStack(alignment: .leading, spacing: 2) {
-                Label("On HRT", systemImage: "calendar")
-                    .font(.headline)
-                    .widgetAccentable()
-                Text(entry.showsIntakes
-                    ? "\(entry.durationText) • \(entry.intakeCount) intakes"
-                    : entry.durationText)
-                    .font(.caption)
+                Text("NEXT INTAKE")
+                    .font(.caption2.weight(.semibold))
+                Text("in \(sampleNextIntakeHours)h \(sampleNextIntakeMinutes)m")
+                    .font(.system(size: 21, weight: .semibold, design: .rounded))
                     .lineLimit(1)
+                    .minimumScaleFactor(0.75)
             }
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel(accessibilitySummary)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+            .widgetAccentable()
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(sampleNextIntakeAccessibilityLabel)
         } else {
-            Label(
-                entry.showsIntakes
-                    ? "\(entry.durationText) on HRT • \(entry.intakeCount) intakes"
-                    : "\(entry.durationText) on HRT",
-                systemImage: "cross.case.fill"
-            )
-            .accessibilityLabel(accessibilitySummary)
+            EmptyView()
         }
+    }
+
+    private var sampleNextIntakeAccessibilityLabel: String {
+        "Next intake in \(sampleNextIntakeHours) hours and \(sampleNextIntakeMinutes) minutes"
     }
 }
 
@@ -406,30 +409,36 @@ private extension View {
                 containerBackground(Color.clear, for: .widget)
             }
         } else {
-            background(Color(.systemBackground))
+            if family == .systemSmall || family == .systemMedium || family == .systemLarge {
+                background(Color(.systemBackground))
+            } else {
+                self
+            }
         }
     }
 }
 
 struct HrtWidget: Widget {
     private var supportedFamilies: [WidgetFamily] {
-        return [
+        var families: [WidgetFamily] = [
             .systemSmall,
             // Re-enable other sizes as their designs are reviewed.
             // .systemMedium,
             // .systemLarge,
             // .accessoryInline,
-            // .accessoryCircular,
-            // .accessoryRectangular,
         ]
+        if #available(iOSApplicationExtension 16.0, *) {
+            families += [.accessoryCircular, .accessoryRectangular]
+        }
+        return families
     }
 
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: widgetKind, provider: HrtWidgetProvider()) { entry in
             HrtWidgetEntryView(entry: entry)
         }
-        .configurationDisplayName("Time on HRT")
-        .description("See your HRT duration and logged intakes at a glance.")
+        .configurationDisplayName("Mona")
+        .description("See your HRT duration or your next intake at a glance.")
         .supportedFamilies(supportedFamilies)
     }
 }
