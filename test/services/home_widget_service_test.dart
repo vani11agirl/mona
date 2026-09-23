@@ -9,6 +9,26 @@ import '../fixtures.dart';
 import '../mocks/mocks.mocks.dart';
 
 void main() {
+  test('recognizes only Mona Home widget links', () {
+    expect(
+      HomeWidgetService.isHomeWidgetUrl(
+        Uri.parse('mona-widget://home?homeWidget=true'),
+      ),
+      isTrue,
+    );
+    expect(HomeWidgetService.isHomeWidgetUrl(null), isFalse);
+    expect(
+      HomeWidgetService.isHomeWidgetUrl(Uri.parse('mona-widget://home')),
+      isFalse,
+    );
+    expect(
+      HomeWidgetService.isHomeWidgetUrl(
+        Uri.parse('mona-widget://other?homeWidget=true'),
+      ),
+      isFalse,
+    );
+  });
+
   group('HomeWidgetService.sync', () {
     late List<Map<String, String?>> saved;
     late List<String> appGroups;

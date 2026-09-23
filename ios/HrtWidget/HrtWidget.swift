@@ -709,6 +709,7 @@ struct HrtWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: widgetKind, provider: HrtWidgetProvider()) { entry in
             HrtWidgetEntryView(entry: entry)
+                .widgetURL(URL(string: "mona-widget://home?homeWidget=true"))
         }
         .configurationDisplayName("Mona")
         .description("See your HRT duration or your next intake at a glance.")

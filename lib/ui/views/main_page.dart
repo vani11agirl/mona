@@ -12,10 +12,10 @@ class MainPage extends StatefulWidget {
   const MainPage({super.key});
 
   @override
-  State<MainPage> createState() => _MainPageState();
+  State<MainPage> createState() => MainPageState();
 }
 
-class _MainPageState extends State<MainPage> {
+class MainPageState extends State<MainPage> {
   int _selectedIndex = 0;
 
   bool _isUpdateAvailable = false;
@@ -26,6 +26,10 @@ class _MainPageState extends State<MainPage> {
 
   void _selectIndex(int index) {
     setState(() => _selectedIndex = index);
+  }
+
+  void showHome() {
+    if (_selectedIndex != 0) _selectIndex(0);
   }
 
   @override

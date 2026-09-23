@@ -17,13 +17,18 @@ typedef UpdateWidget = Future<void> Function({
 });
 
 class HomeWidgetService {
-  static const String _appGroupId = 'group.com.deliacheminot.mona';
+  static const String appGroupId = 'group.com.deliacheminot.mona';
   static const String _iOSName = 'HrtWidget';
   static const String _qualifiedAndroidName =
       'com.deliacheminot.mona.HrtGlanceReceiver';
 
   static bool Function()? isPlatformSupported = () => isMobile;
   static bool Function()? isIOSPlatform = () => isIOS;
+
+  static bool isHomeWidgetUrl(Uri? uri) =>
+      uri?.scheme == 'mona-widget' &&
+      uri?.host == 'home' &&
+      uri?.queryParameters['homeWidget'] == 'true';
 
   final SaveWidgetData _saveWidgetData;
   final SetAppGroupId _setAppGroupId;
@@ -97,7 +102,7 @@ class HomeWidgetService {
 
     final isIOS = isIOSPlatform?.call() ?? false;
     if (isIOS) {
-      await _setAppGroupId(_appGroupId);
+      await _setAppGroupId(appGroupId);
       await _saveWidgetData('next_intake_date', _dateString(nextIntake?.date));
       await _saveWidgetData(
         'next_intake_due_at_ms',

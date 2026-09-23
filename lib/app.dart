@@ -1,11 +1,15 @@
+import 'dart:async';
+
 import 'package:clock/clock.dart';
 import 'package:dynamic_system_colors/dynamic_system_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:home_widget/home_widget.dart';
 import 'package:mona/controllers/notification_planner.dart';
 import 'package:mona/controllers/notification_scheduler.dart';
 import 'package:mona/data/providers/medication_intake_provider.dart';
 import 'package:mona/data/providers/medication_schedule_provider.dart';
+import 'package:mona/distribution.dart';
 import 'package:mona/i18n/build_context_extensions.dart';
 import 'package:mona/i18n/locale_provider.dart';
 import 'package:mona/i18n/tok_localizations.dart';
@@ -25,6 +29,9 @@ class MonaApp extends StatefulWidget {
 }
 
 class _MonaAppState extends State<MonaApp> with WidgetsBindingObserver {
+  final _navigatorKey = GlobalKey<NavigatorState>();
+  final _mainPageKey = GlobalKey<MainPageState>();
+  StreamSubscription<Uri?>? _widgetClickSubscription;
   String? _lastTimeZone;
   late MedicationScheduleProvider _medicationScheduleProvider;
   late MedicationIntakeProvider _medicationIntakeProvider;
@@ -39,6 +46,8 @@ class _MonaAppState extends State<MonaApp> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _lastTimeZone = clock.now().timeZoneOffset.toString();
+
+    if (isIOS) _listenForWidgetTaps();
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await NotificationService().initialize();
@@ -69,6 +78,7 @@ class _MonaAppState extends State<MonaApp> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _widgetClickSubscription?.cancel();
     if (_initialized) {
       _medicationScheduleProvider.removeListener(_regenerateNotifications);
       _medicationIntakeProvider.removeListener(_regenerateNotifications);
@@ -78,6 +88,27 @@ class _MonaAppState extends State<MonaApp> with WidgetsBindingObserver {
       _localeProvider.removeListener(_regenerateHomeWidget);
     }
     super.dispose();
+  }
+
+  Future<void> _listenForWidgetTaps() async {
+    try {
+      await HomeWidget.setAppGroupId(HomeWidgetService.appGroupId);
+      if (!mounted) return;
+      _widgetClickSubscription = HomeWidget.widgetClicked.listen(_openWidgetUrl);
+      _openWidgetUrl(await HomeWidget.initiallyLaunchedFromHomeWidget());
+    } catch (error) {
+      debugPrint('Could not initialize widget tap navigation: $error');
+    }
+  }
+
+  void _openWidgetUrl(Uri? url) {
+    if (!HomeWidgetService.isHomeWidgetUrl(url)) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _navigatorKey.currentState?.popUntil((route) => route.isFirst);
+      _mainPageKey.currentState?.showHome();
+    });
+    WidgetsBinding.instance.scheduleFrame();
   }
 
   void _regenerateNotifications() {
@@ -125,6 +156,7 @@ class _MonaAppState extends State<MonaApp> with WidgetsBindingObserver {
               systemDark: darkDynamic,
             );
         return MaterialApp(
+          navigatorKey: _navigatorKey,
           title: 'Mona',
           locale: context.watch<LocaleProvider>().locale,
           supportedLocales: context.watch<LocaleProvider>().supportedLocales,
@@ -142,7 +174,7 @@ class _MonaAppState extends State<MonaApp> with WidgetsBindingObserver {
             scheme: Theme.of(context).colorScheme,
             child: child ?? const SizedBox.shrink(),
           ),
-          home: const MainPage(),
+          home: MainPage(key: _mainPageKey),
         );
       },
     );
