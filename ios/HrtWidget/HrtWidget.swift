@@ -409,18 +409,15 @@ private extension View {
 
 struct HrtWidget: Widget {
     private var supportedFamilies: [WidgetFamily] {
-        if #available(iOSApplicationExtension 16.0, *) {
-            return [
-                .systemSmall,
-                .systemMedium,
-                .systemLarge,
-                .accessoryInline,
-                .accessoryCircular,
-                .accessoryRectangular,
-            ]
-        } else {
-            return [.systemSmall, .systemMedium, .systemLarge]
-        }
+        return [
+            .systemSmall,
+            // Re-enable other sizes as their designs are reviewed.
+            // .systemMedium,
+            // .systemLarge,
+            // .accessoryInline,
+            // .accessoryCircular,
+            // .accessoryRectangular,
+        ]
     }
 
     var body: some WidgetConfiguration {
