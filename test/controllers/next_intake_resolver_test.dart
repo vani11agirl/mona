@@ -201,6 +201,21 @@ void main() {
     expect(result.interval, const Duration(days: 30));
   });
 
+  test('monthly interval respects a short February', () {
+    final due = Date(year: 2026, month: 3, day: 21);
+    final schedule = aMedicationSchedule(
+      scheduling: aMonthlyStrategy(dayOfMonth: 21),
+      startDate: due,
+    );
+    final slot = IntakeSlot(
+      schedule: schedule,
+      status: ScheduleStatus.upcoming,
+      date: due,
+    );
+
+    expect(resolveNextIntake([slot], noon)!.interval, const Duration(days: 28));
+  });
+
   test('today-overdue monthly intake points to the previous month', () {
     final due = Date(year: 2026, month: 6, day: 21);
     final schedule = aMedicationSchedule(

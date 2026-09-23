@@ -89,9 +89,9 @@ NextIntake? _candidate(IntakeSlot slot, DateTime now) {
       return (
         date: date,
         time: null,
-        interval: date.toDateTime().difference(
-              date.addMonths(-scheduling.intervalMonths).toDateTime(),
-            ),
+        interval: date.value.difference(
+          date.addMonths(-scheduling.intervalMonths).value,
+        ),
         isOverdue: statusOverdue && !taken,
       );
   }
