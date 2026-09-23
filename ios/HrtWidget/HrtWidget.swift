@@ -407,6 +407,7 @@ struct HrtWidgetEntryView: View {
                     .minimumScaleFactor(0.75)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+            .padding(.leading, 8)
             .widgetAccentable()
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(sampleNextIntakeAccessibilityLabel)
