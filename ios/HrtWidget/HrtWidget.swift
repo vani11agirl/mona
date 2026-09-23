@@ -3,8 +3,31 @@ import WidgetKit
 
 private let widgetKind = "HrtWidget"
 
-private let sampleNextIntakeHours = 3
-private let sampleNextIntakeMinutes = 20
+private enum SampleNextIntake {
+    static let value = 5
+    static let unit: Unit = .days
+    static let cycleLength = 7
+
+    enum Unit: String {
+        case hours
+        case days
+        case weeks
+        case months
+
+        func label(for value: Int) -> String {
+            value == 1 ? String(rawValue.dropLast()) : rawValue
+        }
+
+        func circularLabel(for value: Int) -> String {
+            switch self {
+            case .hours: return value == 1 ? "HR" : "HRS"
+            case .days: return value == 1 ? "DAY" : "DAYS"
+            case .weeks: return value == 1 ? "WK" : "WKS"
+            case .months: return "MO."
+            }
+        }
+    }
+}
 
 #if WIDGET_PREVIEW
 private let previewAppGroup = Bundle.main.object(
@@ -355,15 +378,22 @@ struct HrtWidgetEntryView: View {
     @ViewBuilder
     private var accessoryWidget: some View {
         if family == .accessoryCircular {
-            VStack(spacing: 0) {
-                Image(systemName: "clock")
-                    .font(.caption2)
-                Text("\(sampleNextIntakeHours)h")
-                    .font(.system(size: 24, weight: .bold, design: .rounded))
-                Text("\(sampleNextIntakeMinutes)m")
-                    .font(.caption2.weight(.semibold))
+            Gauge(
+                value: Double(SampleNextIntake.value),
+                in: 0...Double(SampleNextIntake.cycleLength)
+            ) {
+                Text("Next intake")
+            } currentValueLabel: {
+                VStack(spacing: -3) {
+                    Text("\(SampleNextIntake.value)")
+                        .font(.system(size: 25, weight: .medium, design: .rounded))
+                    Text(SampleNextIntake.unit.circularLabel(for: SampleNextIntake.value))
+                        .font(.system(size: 10, weight: .medium, design: .rounded))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .gaugeStyle(.accessoryCircularCapacity)
             .widgetAccentable()
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(sampleNextIntakeAccessibilityLabel)
@@ -371,7 +401,7 @@ struct HrtWidgetEntryView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text("NEXT INTAKE")
                     .font(.caption2.weight(.semibold))
-                Text("in \(sampleNextIntakeHours)h \(sampleNextIntakeMinutes)m")
+                Text("in \(SampleNextIntake.value) \(SampleNextIntake.unit.label(for: SampleNextIntake.value))")
                     .font(.system(size: 21, weight: .semibold, design: .rounded))
                     .lineLimit(1)
                     .minimumScaleFactor(0.75)
@@ -386,7 +416,7 @@ struct HrtWidgetEntryView: View {
     }
 
     private var sampleNextIntakeAccessibilityLabel: String {
-        "Next intake in \(sampleNextIntakeHours) hours and \(sampleNextIntakeMinutes) minutes"
+        "Next intake in \(SampleNextIntake.value) \(SampleNextIntake.unit.label(for: SampleNextIntake.value))"
     }
 }
 
