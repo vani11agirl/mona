@@ -2,13 +2,90 @@ import SwiftUI
 import WidgetKit
 
 private let widgetKind = "HrtWidget"
+private let appGroupID = "group.com.deliacheminot.mona"
 
-private enum SampleNextIntake {
-    static let remainingMinutes = 5 * 24 * 60
-    // Display units may change, but the ring stays on the full intake interval.
-    static let intervalMinutes = 7 * 24 * 60
+fileprivate struct NextIntakeSnapshot {
+    let dueDay: Date
+    let dueAt: Date?
+    let intervalMinutes: Int
 
-    static var display: (value: Int, unit: Unit) {
+    init?(defaults: UserDefaults) {
+        guard let dateString = defaults.string(forKey: "next_intake_date"),
+              let intervalString = defaults.string(forKey: "next_intake_interval_minutes"),
+              let intervalMinutes = Int(intervalString), intervalMinutes > 0
+        else {
+            return nil
+        }
+        let parts = dateString.split(separator: "-")
+        guard parts.count == 3,
+              let year = Int(parts[0]), let month = Int(parts[1]), let day = Int(parts[2]),
+              let parsedDay = Calendar.current.date(
+                from: DateComponents(year: year, month: month, day: day)
+              ),
+              Calendar.current.component(.year, from: parsedDay) == year,
+              Calendar.current.component(.month, from: parsedDay) == month,
+              Calendar.current.component(.day, from: parsedDay) == day
+        else {
+            return nil
+        }
+
+        self.dueDay = Calendar.current.startOfDay(for: parsedDay)
+        self.intervalMinutes = intervalMinutes
+        if let rawInstant = defaults.string(forKey: "next_intake_due_at_ms"),
+           let milliseconds = Int64(rawInstant) {
+            self.dueAt = Date(timeIntervalSince1970: Double(milliseconds) / 1000)
+        } else {
+            self.dueAt = nil
+        }
+    }
+
+    private init(dueDay: Date, dueAt: Date?, intervalMinutes: Int) {
+        self.dueDay = dueDay
+        self.dueAt = dueAt
+        self.intervalMinutes = intervalMinutes
+    }
+
+    static var sample: NextIntakeSnapshot {
+        let today = Calendar.current.startOfDay(for: Date())
+        let dueDay = Calendar.current.date(byAdding: .day, value: 5, to: today) ?? today
+        return NextIntakeSnapshot(dueDay: dueDay, dueAt: nil, intervalMinutes: 7 * 24 * 60)
+    }
+
+    func countdown(at now: Date) -> NextIntakeCountdown {
+        if let dueAt {
+            let seconds = dueAt.timeIntervalSince(now)
+            let minutes = seconds >= 0
+                ? Int(ceil(seconds / 60))
+                : -Int(ceil(-seconds / 60))
+            return NextIntakeCountdown(
+                remainingMinutes: minutes,
+                intervalMinutes: intervalMinutes,
+                dateOnly: false
+            )
+        }
+
+        let calendar = Calendar.current
+        var logicalToday = calendar.startOfDay(for: now)
+        let time = calendar.dateComponents([.hour, .minute], from: now)
+        if (time.hour ?? 0) * 60 + (time.minute ?? 0) < 240 {
+            logicalToday = calendar.date(byAdding: .day, value: -1, to: logicalToday)
+                ?? logicalToday
+        }
+        let days = calendar.dateComponents([.day], from: logicalToday, to: dueDay).day ?? 0
+        return NextIntakeCountdown(
+            remainingMinutes: days * 24 * 60,
+            intervalMinutes: intervalMinutes,
+            dateOnly: true
+        )
+    }
+}
+
+private struct NextIntakeCountdown {
+    let remainingMinutes: Int
+    let intervalMinutes: Int
+    let dateOnly: Bool
+
+    var display: (value: Int, unit: Unit) {
         let minutes = abs(remainingMinutes)
         if minutes < 60 {
             return (minutes, .minutes)
@@ -26,17 +103,17 @@ private enum SampleNextIntake {
         return (minutes / (24 * 60), .days)
     }
 
-    static var rectangularText: String {
+    var rectangularText: String {
         if remainingMinutes == 0 {
-            return "Now"
+            return dateOnly ? "Today" : "Now"
         }
         let duration = shortDuration
         return remainingMinutes < 0 ? "\(duration) ago" : "in \(duration)"
     }
 
-    static var accessibilityLabel: String {
+    var accessibilityLabel: String {
         if remainingMinutes == 0 {
-            return "Intake due now"
+            return dateOnly ? "Intake due today" : "Intake due now"
         }
         let duration = spokenDuration
         return remainingMinutes < 0
@@ -44,7 +121,7 @@ private enum SampleNextIntake {
             : "Next intake in \(duration)"
     }
 
-    private static var shortDuration: String {
+    private var shortDuration: String {
         let minutes = abs(remainingMinutes)
         if minutes < 60 {
             return "\(minutes) min"
@@ -57,7 +134,7 @@ private enum SampleNextIntake {
         return "\(display.value) \(display.unit.label(for: display.value))"
     }
 
-    private static var spokenDuration: String {
+    private var spokenDuration: String {
         let minutes = abs(remainingMinutes)
         if minutes < 60 {
             return "\(minutes) \(Unit.minutes.label(for: minutes))"
@@ -147,6 +224,7 @@ struct HrtWidgetEntry: TimelineEntry {
     let intakeCount: Int
     let showsIntakes: Bool
     let recentIntakeCounts: [Int]
+    fileprivate let nextIntake: NextIntakeSnapshot?
 
     fileprivate var durationText: String {
         "\(durationValue) \(durationUnit.label(for: durationValue))"
@@ -162,7 +240,8 @@ struct HrtWidgetEntry: TimelineEntry {
         durationUnit: .months,
         intakeCount: 16,
         showsIntakes: true,
-        recentIntakeCounts: [0, 1, 0, 2, 1, 0, 3]
+        recentIntakeCounts: [0, 1, 0, 2, 1, 0, 3],
+        nextIntake: .sample
     )
 }
 
@@ -175,22 +254,73 @@ struct HrtWidgetProvider: TimelineProvider {
         in context: Context,
         completion: @escaping (HrtWidgetEntry) -> Void
     ) {
-        completion(currentEntry)
+        let now = Date()
+        completion(entry(at: now, nextIntake: sharedNextIntake))
     }
 
     func getTimeline(
         in context: Context,
         completion: @escaping (Timeline<HrtWidgetEntry>) -> Void
     ) {
-        completion(Timeline(entries: [currentEntry], policy: .never))
+        let now = Date()
+        let nextIntake = sharedNextIntake
+        let entries = timelineDates(from: now, for: nextIntake).map {
+            entry(at: $0, nextIntake: nextIntake)
+        }
+        completion(Timeline(entries: entries, policy: nextIntake == nil ? .never : .atEnd))
     }
 
-    private var currentEntry: HrtWidgetEntry {
+    private var sharedNextIntake: NextIntakeSnapshot? {
+        guard let defaults = UserDefaults(suiteName: appGroupID) else { return nil }
+        return NextIntakeSnapshot(defaults: defaults)
+    }
+
+    private func timelineDates(from now: Date, for nextIntake: NextIntakeSnapshot?) -> [Date] {
+        guard let nextIntake else { return [now] }
+        var dates = [now]
+        if let dueAt = nextIntake.dueAt {
+            let horizon = now.addingTimeInterval(7 * 24 * 60 * 60)
+            var cursor = now
+            while cursor < horizon {
+                let distance = abs(dueAt.timeIntervalSince(cursor))
+                let step: TimeInterval = distance < 60 * 60 ? 5 * 60
+                    : distance < 24 * 60 * 60 ? 15 * 60 : 6 * 60 * 60
+                cursor = cursor.addingTimeInterval(step)
+                dates.append(cursor)
+            }
+        } else {
+            let calendar = Calendar.current
+            guard var boundary = calendar.nextDate(
+                after: now,
+                matching: DateComponents(hour: 4, minute: 0, second: 0),
+                matchingPolicy: .nextTime
+            ) else { return dates }
+            for _ in 0..<7 {
+                dates.append(boundary)
+                boundary = calendar.date(byAdding: .day, value: 1, to: boundary) ?? boundary
+            }
+        }
+        return dates
+    }
+
+    private func sampleEntry(at date: Date, nextIntake: NextIntakeSnapshot?) -> HrtWidgetEntry {
+        HrtWidgetEntry(
+            date: date,
+            durationValue: HrtWidgetEntry.sample.durationValue,
+            durationUnit: HrtWidgetEntry.sample.durationUnit,
+            intakeCount: HrtWidgetEntry.sample.intakeCount,
+            showsIntakes: HrtWidgetEntry.sample.showsIntakes,
+            recentIntakeCounts: HrtWidgetEntry.sample.recentIntakeCounts,
+            nextIntake: nextIntake
+        )
+    }
+
+    private func entry(at date: Date, nextIntake: NextIntakeSnapshot?) -> HrtWidgetEntry {
         #if WIDGET_PREVIEW
         guard let previewAppGroup,
               let defaults = UserDefaults(suiteName: previewAppGroup)
         else {
-            return .sample
+            return sampleEntry(at: date, nextIntake: nextIntake)
         }
 
         let storedValue = defaults.integer(forKey: "preview_duration_value")
@@ -207,7 +337,7 @@ struct HrtWidgetProvider: TimelineProvider {
             : HrtWidgetEntry.sample.recentIntakeCounts
 
         return HrtWidgetEntry(
-            date: Date(),
+            date: date,
             durationValue: storedValue > 0 ? storedValue : HrtWidgetEntry.sample.durationValue,
             durationUnit: HrtDurationUnit(rawValue: storedUnit ?? "") ?? .months,
             intakeCount: defaults.object(forKey: "preview_intake_count") == nil
@@ -216,10 +346,11 @@ struct HrtWidgetProvider: TimelineProvider {
             showsIntakes: defaults.object(forKey: "preview_show_intakes") == nil
                 ? true
                 : defaults.bool(forKey: "preview_show_intakes"),
-            recentIntakeCounts: normalizedRecentCounts
+            recentIntakeCounts: normalizedRecentCounts,
+            nextIntake: nextIntake
         )
         #else
-        return .sample
+        return sampleEntry(at: date, nextIntake: nextIntake)
         #endif
     }
 }
@@ -451,45 +582,72 @@ struct HrtWidgetEntryView: View {
         return summary
     }
 
+    private var countdown: NextIntakeCountdown? {
+        entry.nextIntake?.countdown(at: entry.date)
+    }
+
+    private var accessoryTitle: String {
+        guard let countdown else { return "NEXT INTAKE" }
+        return countdown.remainingMinutes <= 0 ? "INTAKE DUE" : "NEXT INTAKE"
+    }
+
     @available(iOSApplicationExtension 16.0, *)
     @ViewBuilder
     private var accessoryWidget: some View {
         if family == .accessoryCircular {
-            Gauge(
-                value: Double(max(0, min(SampleNextIntake.remainingMinutes, SampleNextIntake.intervalMinutes))),
-                in: 0...Double(SampleNextIntake.intervalMinutes)
-            ) {
-                Text("Next intake")
-            } currentValueLabel: {
-                VStack(spacing: -3) {
-                    if SampleNextIntake.remainingMinutes == 0 {
-                        Text("DUE")
-                            .font(.system(size: 17, weight: .semibold, design: .rounded))
-                    } else {
-                        Text(SampleNextIntake.remainingMinutes < 0
-                            ? "\(SampleNextIntake.display.value)\(SampleNextIntake.display.unit.shortSuffix)"
-                            : "\(SampleNextIntake.display.value)")
-                            .font(.system(size: 25, weight: .medium, design: .rounded))
+            if let countdown {
+                Gauge(
+                    value: Double(max(0, min(countdown.remainingMinutes, countdown.intervalMinutes))),
+                    in: 0...Double(countdown.intervalMinutes)
+                ) {
+                    Text("Next intake")
+                } currentValueLabel: {
+                    VStack(spacing: -3) {
+                        if countdown.remainingMinutes == 0 {
+                            Text("DUE")
+                                .font(.system(size: 17, weight: .semibold, design: .rounded))
+                        } else {
+                            Text(countdown.remainingMinutes < 0
+                                ? "\(countdown.display.value)\(countdown.display.unit.shortSuffix)"
+                                : "\(countdown.display.value)")
+                                .font(.system(size: 25, weight: .medium, design: .rounded))
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.7)
+                        }
+                        Text(countdown.remainingMinutes < 0 ? "LATE"
+                            : countdown.remainingMinutes == 0
+                                ? (countdown.dateOnly ? "TODAY" : "NOW")
+                                : countdown.display.unit.circularLabel(for: countdown.display.value))
+                            .font(.system(size: 10, weight: .medium, design: .rounded))
                             .lineLimit(1)
-                            .minimumScaleFactor(0.7)
+                            .minimumScaleFactor(0.8)
                     }
-                    Text(SampleNextIntake.remainingMinutes <= 0
-                        ? (SampleNextIntake.remainingMinutes == 0 ? "NOW" : "LATE")
-                        : SampleNextIntake.display.unit.circularLabel(for: SampleNextIntake.display.value))
-                        .font(.system(size: 10, weight: .medium, design: .rounded))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
                 }
+                .gaugeStyle(.accessoryCircularCapacity)
+                .widgetAccentable()
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(countdown.accessibilityLabel)
+            } else {
+                Gauge(value: 0, in: 0...1) {
+                    Text("Next intake")
+                } currentValueLabel: {
+                    VStack(spacing: -3) {
+                        Text("—")
+                            .font(.system(size: 25, weight: .medium, design: .rounded))
+                        Text("NO PLAN")
+                            .font(.system(size: 10, weight: .medium, design: .rounded))
+                    }
+                }
+                .gaugeStyle(.accessoryCircularCapacity)
+                .widgetAccentable()
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("No scheduled intake")
             }
-            .gaugeStyle(.accessoryCircularCapacity)
-            .widgetAccentable()
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel(SampleNextIntake.accessibilityLabel)
         } else if family == .accessoryRectangular {
             VStack(alignment: .leading, spacing: 2) {
-                Text(SampleNextIntake.remainingMinutes <= 0 ? "INTAKE DUE" : "NEXT INTAKE")
+                Text(accessoryTitle)
                     .font(.caption2.weight(.semibold))
-                Text(SampleNextIntake.rectangularText)
+                Text(countdown?.rectangularText ?? "No schedule")
                     .font(.system(size: 21, weight: .semibold, design: .rounded))
                     .lineLimit(1)
                     .minimumScaleFactor(0.75)
@@ -498,7 +656,7 @@ struct HrtWidgetEntryView: View {
             .padding(.leading, 8)
             .widgetAccentable()
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel(SampleNextIntake.accessibilityLabel)
+            .accessibilityLabel(countdown?.accessibilityLabel ?? "No scheduled intake")
         } else {
             EmptyView()
         }
