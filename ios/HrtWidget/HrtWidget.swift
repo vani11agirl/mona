@@ -13,6 +13,7 @@ private enum HrtWidgetColors {
     // Keeps Mona's Android widget palette, expressed through native iOS shapes
     // and semantic foreground colors.
     static let accent = Color(red: 103.0 / 255.0, green: 80.0 / 255.0, blue: 164.0 / 255.0)
+    static let darkAccent = Color(red: 195.0 / 255.0, green: 172.0 / 255.0, blue: 237.0 / 255.0)
 }
 
 fileprivate enum HrtDurationUnit: String {
@@ -49,7 +50,7 @@ struct HrtWidgetEntry: TimelineEntry {
     }
 
     fileprivate var intakeText: String {
-        "\(intakeCount) \(intakeCount == 1 ? "intake" : "intakes") logged"
+        "\(intakeCount.formatted()) \(intakeCount == 1 ? "intake" : "intakes") logged"
     }
 
     fileprivate static let sample = HrtWidgetEntry(
@@ -122,6 +123,7 @@ struct HrtWidgetProvider: TimelineProvider {
 
 struct HrtWidgetEntryView: View {
     @Environment(\.widgetFamily) private var family
+    @Environment(\.colorScheme) private var colorScheme
 
     let entry: HrtWidgetEntry
 
@@ -149,7 +151,9 @@ struct HrtWidgetEntryView: View {
         VStack(alignment: .leading, spacing: 0) {
             Label("Time on HRT", systemImage: "calendar")
                 .font(.caption.weight(.semibold))
-                .foregroundColor(HrtWidgetColors.accent)
+                .foregroundColor(
+                    colorScheme == .dark ? HrtWidgetColors.darkAccent : HrtWidgetColors.accent
+                )
 
             Spacer(minLength: 8)
 
