@@ -4,6 +4,18 @@ import WidgetKit
 private let widgetKind = "HrtWidget"
 private let appGroupID = "group.com.deliacheminot.mona"
 
+private func widgetDay(_ raw: String, calendar: Calendar = .current) -> Date? {
+    let parts = raw.split(separator: "-")
+    guard parts.count == 3,
+          let year = Int(parts[0]), let month = Int(parts[1]), let day = Int(parts[2]),
+          let parsed = calendar.date(from: DateComponents(year: year, month: month, day: day)),
+          calendar.component(.year, from: parsed) == year,
+          calendar.component(.month, from: parsed) == month,
+          calendar.component(.day, from: parsed) == day
+    else { return nil }
+    return calendar.startOfDay(for: parsed)
+}
+
 fileprivate struct NextIntakeSnapshot {
     let dueDay: Date
     let dueAt: Date?
@@ -16,16 +28,7 @@ fileprivate struct NextIntakeSnapshot {
         else {
             return nil
         }
-        let parts = dateString.split(separator: "-")
-        guard parts.count == 3,
-              let year = Int(parts[0]), let month = Int(parts[1]), let day = Int(parts[2]),
-              let parsedDay = Calendar.current.date(
-                from: DateComponents(year: year, month: month, day: day)
-              ),
-              Calendar.current.component(.year, from: parsedDay) == year,
-              Calendar.current.component(.month, from: parsedDay) == month,
-              Calendar.current.component(.day, from: parsedDay) == day
-        else {
+        guard let parsedDay = widgetDay(dateString) else {
             return nil
         }
 
@@ -37,18 +40,6 @@ fileprivate struct NextIntakeSnapshot {
         } else {
             self.dueAt = nil
         }
-    }
-
-    private init(dueDay: Date, dueAt: Date?, intervalMinutes: Int) {
-        self.dueDay = dueDay
-        self.dueAt = dueAt
-        self.intervalMinutes = intervalMinutes
-    }
-
-    static var sample: NextIntakeSnapshot {
-        let today = Calendar.current.startOfDay(for: Date())
-        let dueDay = Calendar.current.date(byAdding: .day, value: 5, to: today) ?? today
-        return NextIntakeSnapshot(dueDay: dueDay, dueAt: nil, intervalMinutes: 7 * 24 * 60)
     }
 
     func countdown(at now: Date) -> NextIntakeCountdown {
@@ -109,7 +100,7 @@ private struct NextIntakeCountdown {
         }
         if abs(remainingMinutes) >= 24 * 60 {
             let signedValue = remainingMinutes < 0 ? -display.value : display.value
-            return copy.relative(display.unit.components(value: signedValue), abbreviated: true)
+            return copy.relative(display.unit.components(value: signedValue), abbreviated: false)
         }
         let duration = shortDuration(copy: copy)
         return remainingMinutes < 0 ? copy.past(duration) : copy.future(duration)
@@ -179,37 +170,8 @@ private struct NextIntakeCountdown {
             }
         }
 
-        func label(for value: Int) -> String {
-            value == 1 ? String(rawValue.dropLast()) : rawValue
-        }
-
-        func circularLabel(for value: Int) -> String {
-            switch self {
-            case .minutes: return "MIN"
-            case .hours: return value == 1 ? "HR" : "HRS"
-            case .days: return value == 1 ? "DAY" : "DAYS"
-            case .weeks: return value == 1 ? "WK" : "WKS"
-            case .months: return "MO."
-            }
-        }
-
-        var shortSuffix: String {
-            switch self {
-            case .minutes: return "m"
-            case .hours: return "h"
-            case .days: return "d"
-            case .weeks: return "w"
-            case .months: return "mo"
-            }
-        }
     }
 }
-
-#if WIDGET_PREVIEW
-private let previewAppGroup = Bundle.main.object(
-    forInfoDictionaryKey: "PreviewAppGroup"
-) as? String
-#endif
 
 private enum HrtWidgetColors {
     // Keeps Mona's Android widget palette, expressed through native iOS shapes
@@ -238,13 +200,36 @@ fileprivate enum HrtDurationUnit: String {
         return String(rawValue.dropLast())
     }
 
-    var compactLabel: String {
-        switch self {
-        case .days: return "d"
-        case .weeks: return "w"
-        case .months: return "mo"
-        case .years: return "y"
+}
+
+private struct HrtDurationSnapshot {
+    let firstDay: Date
+
+    init?(defaults: UserDefaults) {
+        guard let raw = defaults.string(forKey: "hrt_first_date"),
+              let day = widgetDay(raw)
+        else { return nil }
+        firstDay = day
+    }
+
+    func duration(at now: Date) -> (value: Int, unit: HrtDurationUnit) {
+        let calendar = Calendar.current
+        var today = calendar.startOfDay(for: now)
+        let time = calendar.dateComponents([.hour, .minute], from: now)
+        if (time.hour ?? 0) * 60 + (time.minute ?? 0) < 240 {
+            today = calendar.date(byAdding: .day, value: -1, to: today) ?? today
         }
+
+        let days = max(0, calendar.dateComponents([.day], from: firstDay, to: today).day ?? 0)
+        if days < 7 { return (max(days, 1), .days) }
+        if days < 90 { return (days / 7, .weeks) }
+
+        let first = calendar.dateComponents([.year, .month, .day], from: firstDay)
+        let current = calendar.dateComponents([.year, .month, .day], from: today)
+        var months = ((current.year ?? 0) - (first.year ?? 0)) * 12
+            + (current.month ?? 0) - (first.month ?? 0)
+        if (current.day ?? 0) < (first.day ?? 0) { months -= 1 }
+        return months < 12 ? (max(months, 1), .months) : (months / 12, .years)
     }
 }
 
@@ -254,15 +239,18 @@ struct HrtWidgetEntry: TimelineEntry {
     fileprivate let durationUnit: HrtDurationUnit
     let intakeCount: Int
     let showsIntakes: Bool
+    let hasHrtData: Bool
     let recentIntakeCounts: [Int]
     fileprivate let nextIntake: NextIntakeSnapshot?
     let localeIdentifier: String
     let homeTitle: String
     let homeIntakeText: String
+    let homeEmptyText: String
 
     fileprivate var copy: WidgetCopy { WidgetCopy(localeIdentifier: localeIdentifier) }
 
     fileprivate var durationText: String {
+        guard hasHrtData else { return "—" }
         let (components, units) = durationUnit.components(value: durationValue)
         let localized = copy.duration(components, units: units, abbreviated: false)
         return localized.isEmpty ? "\(durationValue) \(durationUnit.label(for: durationValue))" : localized
@@ -271,24 +259,11 @@ struct HrtWidgetEntry: TimelineEntry {
     fileprivate var intakeText: String {
         homeIntakeText
     }
-
-    fileprivate static let sample = HrtWidgetEntry(
-        date: Date(),
-        durationValue: 8,
-        durationUnit: .months,
-        intakeCount: 16,
-        showsIntakes: true,
-        recentIntakeCounts: [0, 1, 0, 2, 1, 0, 3],
-        nextIntake: .sample,
-        localeIdentifier: Locale.current.identifier,
-        homeTitle: "Time on HRT",
-        homeIntakeText: "16 intakes logged"
-    )
 }
 
 struct HrtWidgetProvider: TimelineProvider {
     func placeholder(in context: Context) -> HrtWidgetEntry {
-        .sample
+        entry(at: Date(), nextIntake: sharedNextIntake)
     }
 
     func getSnapshot(
@@ -308,7 +283,7 @@ struct HrtWidgetProvider: TimelineProvider {
         let entries = timelineDates(from: now, for: nextIntake).map {
             entry(at: $0, nextIntake: nextIntake)
         }
-        completion(Timeline(entries: entries, policy: nextIntake == nil ? .never : .atEnd))
+        completion(Timeline(entries: entries, policy: .atEnd))
     }
 
     private var sharedNextIntake: NextIntakeSnapshot? {
@@ -317,91 +292,63 @@ struct HrtWidgetProvider: TimelineProvider {
     }
 
     private func timelineDates(from now: Date, for nextIntake: NextIntakeSnapshot?) -> [Date] {
-        guard let nextIntake else { return [now] }
-        var dates = [now]
-        if let dueAt = nextIntake.dueAt {
-            let horizon = now.addingTimeInterval(7 * 24 * 60 * 60)
+        let calendar = Calendar.current
+        let horizon = calendar.date(byAdding: .day, value: 7, to: now)
+            ?? now.addingTimeInterval(7 * 24 * 60 * 60)
+        var dates: Set<Date> = [now]
+
+        // Mona's logical day starts at 04:00; refresh HRT duration even if
+        // the app has not been opened and no next intake is scheduled.
+        if var boundary = calendar.nextDate(
+            after: now,
+            matching: DateComponents(hour: 4, minute: 0, second: 0),
+            matchingPolicy: .nextTime
+        ) {
+            while boundary <= horizon {
+                dates.insert(boundary)
+                boundary = calendar.date(byAdding: .day, value: 1, to: boundary) ?? horizon.addingTimeInterval(1)
+            }
+        }
+
+        if let dueAt = nextIntake?.dueAt {
             var cursor = now
             while cursor < horizon {
                 let distance = abs(dueAt.timeIntervalSince(cursor))
                 let step: TimeInterval = distance < 60 * 60 ? 5 * 60
                     : distance < 24 * 60 * 60 ? 15 * 60 : 6 * 60 * 60
                 cursor = cursor.addingTimeInterval(step)
-                dates.append(cursor)
-            }
-        } else {
-            let calendar = Calendar.current
-            guard var boundary = calendar.nextDate(
-                after: now,
-                matching: DateComponents(hour: 4, minute: 0, second: 0),
-                matchingPolicy: .nextTime
-            ) else { return dates }
-            for _ in 0..<7 {
-                dates.append(boundary)
-                boundary = calendar.date(byAdding: .day, value: 1, to: boundary) ?? boundary
+                if cursor <= horizon { dates.insert(cursor) }
             }
         }
-        return dates
-    }
-
-    private func sampleEntry(at date: Date, nextIntake: NextIntakeSnapshot?) -> HrtWidgetEntry {
-        let defaults = UserDefaults(suiteName: appGroupID)
-        return HrtWidgetEntry(
-            date: date,
-            durationValue: HrtWidgetEntry.sample.durationValue,
-            durationUnit: HrtWidgetEntry.sample.durationUnit,
-            intakeCount: HrtWidgetEntry.sample.intakeCount,
-            showsIntakes: HrtWidgetEntry.sample.showsIntakes,
-            recentIntakeCounts: HrtWidgetEntry.sample.recentIntakeCounts,
-            nextIntake: nextIntake,
-            localeIdentifier: defaults?.string(forKey: "app_locale") ?? Locale.current.identifier,
-            homeTitle: defaults?.string(forKey: "widget_home_title") ?? "Time on HRT",
-            homeIntakeText: defaults?.string(forKey: "widget_home_sample_intakes")
-                ?? "16 intakes logged"
-        )
+        return dates.sorted()
     }
 
     private func entry(at date: Date, nextIntake: NextIntakeSnapshot?) -> HrtWidgetEntry {
-        #if WIDGET_PREVIEW
-        guard let previewAppGroup,
-              let defaults = UserDefaults(suiteName: previewAppGroup)
-        else {
-            return sampleEntry(at: date, nextIntake: nextIntake)
-        }
-
-        let storedValue = defaults.integer(forKey: "preview_duration_value")
-        let storedUnit = defaults.string(forKey: "preview_duration_unit")
-        let storedIntakes = defaults.integer(forKey: "preview_intake_count")
-        let storedRecentCounts = defaults.string(
-            forKey: "preview_recent_intake_counts"
-        )
-        let recentCounts = storedRecentCounts?
+        let defaults = UserDefaults(suiteName: appGroupID)
+        let duration = defaults.flatMap { HrtDurationSnapshot(defaults: $0) }?.duration(at: date)
+        let intakeCount = max(0, Int(defaults?.string(forKey: "hrt_intake_count") ?? "") ?? 0)
+        let recentCounts = defaults?.string(forKey: "hrt_recent_intake_counts")?
             .split(separator: ",")
             .map { max(0, Int($0) ?? 0) }
         let normalizedRecentCounts = recentCounts?.count == 7
             ? recentCounts ?? []
-            : HrtWidgetEntry.sample.recentIntakeCounts
+            : Array(repeating: 0, count: 7)
 
         return HrtWidgetEntry(
             date: date,
-            durationValue: storedValue > 0 ? storedValue : HrtWidgetEntry.sample.durationValue,
-            durationUnit: HrtDurationUnit(rawValue: storedUnit ?? "") ?? .months,
-            intakeCount: defaults.object(forKey: "preview_intake_count") == nil
-                ? HrtWidgetEntry.sample.intakeCount
-                : max(0, storedIntakes),
-            showsIntakes: defaults.object(forKey: "preview_show_intakes") == nil
-                ? true
-                : defaults.bool(forKey: "preview_show_intakes"),
+            durationValue: duration?.value ?? 0,
+            durationUnit: duration?.unit ?? .days,
+            intakeCount: intakeCount,
+            showsIntakes: duration != nil,
+            hasHrtData: duration != nil,
             recentIntakeCounts: normalizedRecentCounts,
             nextIntake: nextIntake,
-            localeIdentifier: defaults.string(forKey: "app_locale") ?? Locale.current.identifier,
-            homeTitle: defaults.string(forKey: "widget_home_title") ?? "Time on HRT",
-            homeIntakeText: defaults.string(forKey: "widget_home_sample_intakes")
-                ?? "16 intakes logged"
+            localeIdentifier: defaults?.string(forKey: "app_locale") ?? Locale.current.identifier,
+            homeTitle: defaults?.string(forKey: "widget_home_title") ?? "Time on HRT",
+            homeIntakeText: defaults?.string(forKey: "widget_home_intakes")
+                ?? "\(intakeCount) intakes logged",
+            homeEmptyText: defaults?.string(forKey: "widget_home_empty") ?? "Never taken yet"
         )
-        #else
-        return sampleEntry(at: date, nextIntake: nextIntake)
-        #endif
     }
 }
 
@@ -449,6 +396,13 @@ struct HrtWidgetEntryView: View {
 
             if entry.showsIntakes {
                 Text(entry.intakeText)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .padding(.top, 4)
+            } else {
+                Text(entry.homeEmptyText)
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .lineLimit(1)
@@ -625,6 +579,7 @@ struct HrtWidgetEntryView: View {
     }
 
     private var accessibilitySummary: String {
+        guard entry.hasHrtData else { return "\(entry.homeTitle), \(entry.homeEmptyText)." }
         var summary = "\(entry.homeTitle), \(entry.durationText)."
         if entry.showsIntakes {
             summary += " \(entry.intakeText)."
