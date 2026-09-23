@@ -4,11 +4,77 @@ import WidgetKit
 private let widgetKind = "HrtWidget"
 
 private enum SampleNextIntake {
-    static let value = 5
-    static let unit: Unit = .days
-    static let cycleLength = 7
+    static let remainingMinutes = 5 * 24 * 60
+    // Display units may change, but the ring stays on the full intake interval.
+    static let intervalMinutes = 7 * 24 * 60
+
+    static var display: (value: Int, unit: Unit) {
+        let minutes = abs(remainingMinutes)
+        if minutes < 60 {
+            return (minutes, .minutes)
+        }
+        if minutes < 24 * 60 {
+            return (minutes / 60, .hours)
+        }
+        // Preview-only approximation; real month durations need calendar dates.
+        if minutes >= 30 * 24 * 60 {
+            return (minutes / (30 * 24 * 60), .months)
+        }
+        if minutes >= 7 * 24 * 60 {
+            return (minutes / (7 * 24 * 60), .weeks)
+        }
+        return (minutes / (24 * 60), .days)
+    }
+
+    static var rectangularText: String {
+        if remainingMinutes == 0 {
+            return "Now"
+        }
+        let duration = shortDuration
+        return remainingMinutes < 0 ? "\(duration) ago" : "in \(duration)"
+    }
+
+    static var accessibilityLabel: String {
+        if remainingMinutes == 0 {
+            return "Intake due now"
+        }
+        let duration = spokenDuration
+        return remainingMinutes < 0
+            ? "Intake overdue by \(duration)"
+            : "Next intake in \(duration)"
+    }
+
+    private static var shortDuration: String {
+        let minutes = abs(remainingMinutes)
+        if minutes < 60 {
+            return "\(minutes) min"
+        }
+        if minutes < 24 * 60 {
+            let hours = minutes / 60
+            let extraMinutes = minutes % 60
+            return extraMinutes == 0 ? "\(hours)h" : "\(hours)h \(extraMinutes)m"
+        }
+        return "\(display.value) \(display.unit.label(for: display.value))"
+    }
+
+    private static var spokenDuration: String {
+        let minutes = abs(remainingMinutes)
+        if minutes < 60 {
+            return "\(minutes) \(Unit.minutes.label(for: minutes))"
+        }
+        if minutes < 24 * 60 {
+            let hours = minutes / 60
+            let extraMinutes = minutes % 60
+            let hourText = "\(hours) \(Unit.hours.label(for: hours))"
+            return extraMinutes == 0
+                ? hourText
+                : "\(hourText) and \(extraMinutes) \(Unit.minutes.label(for: extraMinutes))"
+        }
+        return "\(display.value) \(display.unit.label(for: display.value))"
+    }
 
     enum Unit: String {
+        case minutes
         case hours
         case days
         case weeks
@@ -20,10 +86,21 @@ private enum SampleNextIntake {
 
         func circularLabel(for value: Int) -> String {
             switch self {
+            case .minutes: return "MIN"
             case .hours: return value == 1 ? "HR" : "HRS"
             case .days: return value == 1 ? "DAY" : "DAYS"
             case .weeks: return value == 1 ? "WK" : "WKS"
             case .months: return "MO."
+            }
+        }
+
+        var shortSuffix: String {
+            switch self {
+            case .minutes: return "m"
+            case .hours: return "h"
+            case .days: return "d"
+            case .weeks: return "w"
+            case .months: return "mo"
             }
         }
     }
@@ -379,15 +456,26 @@ struct HrtWidgetEntryView: View {
     private var accessoryWidget: some View {
         if family == .accessoryCircular {
             Gauge(
-                value: Double(SampleNextIntake.value),
-                in: 0...Double(SampleNextIntake.cycleLength)
+                value: Double(max(0, min(SampleNextIntake.remainingMinutes, SampleNextIntake.intervalMinutes))),
+                in: 0...Double(SampleNextIntake.intervalMinutes)
             ) {
                 Text("Next intake")
             } currentValueLabel: {
                 VStack(spacing: -3) {
-                    Text("\(SampleNextIntake.value)")
-                        .font(.system(size: 25, weight: .medium, design: .rounded))
-                    Text(SampleNextIntake.unit.circularLabel(for: SampleNextIntake.value))
+                    if SampleNextIntake.remainingMinutes == 0 {
+                        Text("DUE")
+                            .font(.system(size: 17, weight: .semibold, design: .rounded))
+                    } else {
+                        Text(SampleNextIntake.remainingMinutes < 0
+                            ? "\(SampleNextIntake.display.value)\(SampleNextIntake.display.unit.shortSuffix)"
+                            : "\(SampleNextIntake.display.value)")
+                            .font(.system(size: 25, weight: .medium, design: .rounded))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                    }
+                    Text(SampleNextIntake.remainingMinutes <= 0
+                        ? (SampleNextIntake.remainingMinutes == 0 ? "NOW" : "LATE")
+                        : SampleNextIntake.display.unit.circularLabel(for: SampleNextIntake.display.value))
                         .font(.system(size: 10, weight: .medium, design: .rounded))
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
@@ -396,12 +484,12 @@ struct HrtWidgetEntryView: View {
             .gaugeStyle(.accessoryCircularCapacity)
             .widgetAccentable()
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel(sampleNextIntakeAccessibilityLabel)
+            .accessibilityLabel(SampleNextIntake.accessibilityLabel)
         } else if family == .accessoryRectangular {
             VStack(alignment: .leading, spacing: 2) {
-                Text("NEXT INTAKE")
+                Text(SampleNextIntake.remainingMinutes <= 0 ? "INTAKE DUE" : "NEXT INTAKE")
                     .font(.caption2.weight(.semibold))
-                Text("in \(SampleNextIntake.value) \(SampleNextIntake.unit.label(for: SampleNextIntake.value))")
+                Text(SampleNextIntake.rectangularText)
                     .font(.system(size: 21, weight: .semibold, design: .rounded))
                     .lineLimit(1)
                     .minimumScaleFactor(0.75)
@@ -410,14 +498,10 @@ struct HrtWidgetEntryView: View {
             .padding(.leading, 8)
             .widgetAccentable()
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel(sampleNextIntakeAccessibilityLabel)
+            .accessibilityLabel(SampleNextIntake.accessibilityLabel)
         } else {
             EmptyView()
         }
-    }
-
-    private var sampleNextIntakeAccessibilityLabel: String {
-        "Next intake in \(SampleNextIntake.value) \(SampleNextIntake.unit.label(for: SampleNextIntake.value))"
     }
 }
 
