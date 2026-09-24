@@ -9,12 +9,19 @@ void main() {
   test('every app locale has complete iOS widget copy', () {
     // Arrange
     final sourceDirectory = Directory('lib/i18n');
+    final localeCount = sourceDirectory
+        .listSync()
+        .whereType<File>()
+        .where(
+          (file) => file.path.endsWith('.i18next.json'),
+        )
+        .length;
 
     // Act
     final translations = buildIosWidgetTranslations(sourceDirectory);
 
     // Assert
-    expect(translations, hasLength(22));
+    expect(translations, hasLength(localeCount));
     for (final words in translations.values) {
       expect(words.keys, containsAll(widgetKeys));
       expect(words.values, everyElement(isNotEmpty));

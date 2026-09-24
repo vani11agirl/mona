@@ -616,9 +616,6 @@ class TranslationsEnGb extends Translations
   @override
   String get cannotExceedTotalCapacity => 'Cannot exceed total capacity';
   @override
-  String concentrationLabelPerUnit({required Object unit}) =>
-      'Dose per ${unit}';
-  @override
   String get iosWidgetNextIntake => 'Next intake';
   @override
   String get iosWidgetIntakeDue => 'Intake due';
@@ -1116,8 +1113,6 @@ extension on TranslationsEnGb {
       'mustBeAtMost' => ({required Object max}) => 'Must be at most ${max}',
       'invalidTotalAmount' => 'Invalid total amount',
       'cannotExceedTotalCapacity' => 'Cannot exceed total capacity',
-      'concentrationLabelPerUnit' => ({required Object unit}) =>
-          'Dose per ${unit}',
       'iosWidgetNextIntake' => 'Next intake',
       'iosWidgetIntakeDue' => 'Intake due',
       'iosWidgetDue' => 'Due',

@@ -3,8 +3,8 @@
 /// Source: lib/i18n/generated
 /// To regenerate, run: `dart run slang`
 ///
-/// Locales: 22
-/// Strings: 5590 (254 per locale)
+/// Locales: 23
+/// Strings: 5898 (256 per locale)
 
 // coverage:ignore-file
 // ignore_for_file: type=lint, unused_import

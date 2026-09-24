@@ -24,6 +24,8 @@ struct WidgetCopy {
     var noPlan: String { text("iosWidgetNoPlan") }
     var noSchedule: String { text("iosWidgetNoSchedule") }
     var now: String { text("iosWidgetNow") }
+    var homeTitle: String { text("HrtCounter") }
+    var homeEmpty: String { text("neverTakenYet") }
     var pickerDescription: String { text("HrtCounterDescription") }
 
     func future(_ duration: String) -> String {

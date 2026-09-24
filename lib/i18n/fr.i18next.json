@@ -349,5 +349,4 @@
   "iosWidgetNow": "Maintenant",
   "iosWidgetFuture": "dans {{duration}}",
   "iosWidgetPast": "il y a {{duration}}"
-  "cannotExceedTotalCapacity": "Ne peut pas dépasser la capacité totale"
 }

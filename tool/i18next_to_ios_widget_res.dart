@@ -6,7 +6,9 @@ const _sourceExtension = '.i18next.json';
 const _outputFile = 'ios/HrtWidget/WidgetTranslations.json';
 
 const widgetKeys = [
+  'HrtCounter',
   'HrtCounterDescription',
+  'neverTakenYet',
   'iosWidgetNextIntake',
   'iosWidgetIntakeDue',
   'iosWidgetDue',

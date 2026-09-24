@@ -315,7 +315,6 @@
   "mustBeAtMost": "Must be at most {{max}}",
   "invalidTotalAmount": "Invalid total amount",
   "cannotExceedTotalCapacity": "Cannot exceed total capacity",
-  "concentrationLabelPerUnit": "Dose per {{unit}}",
   "iosWidgetNextIntake": "Next intake",
   "iosWidgetIntakeDue": "Intake due",
   "iosWidgetDue": "Due",
@@ -325,6 +324,4 @@
   "iosWidgetNow": "Now",
   "iosWidgetFuture": "in {{duration}}",
   "iosWidgetPast": "{{duration}} ago"
-}
-  "cannotExceedTotalCapacity": "Cannot exceed total capacity"
 }

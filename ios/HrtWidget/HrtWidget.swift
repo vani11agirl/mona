@@ -320,6 +320,8 @@ struct HrtWidgetProvider: TimelineProvider {
 
     private func entry(at date: Date, nextIntake: NextIntakeSnapshot?) -> HrtWidgetEntry {
         let defaults = UserDefaults(suiteName: appGroupID)
+        let localeIdentifier = defaults?.string(forKey: "app_locale") ?? Locale.current.identifier
+        let copy = WidgetCopy(localeIdentifier: localeIdentifier)
         let duration = defaults.flatMap { HrtDurationSnapshot(defaults: $0) }?.duration(at: date)
         let intakeCount = max(0, Int(defaults?.string(forKey: "hrt_intake_count") ?? "") ?? 0)
         let recentCounts = defaults?.string(forKey: "hrt_recent_intake_counts")?
@@ -338,11 +340,11 @@ struct HrtWidgetProvider: TimelineProvider {
             hasHrtData: duration != nil,
             recentIntakeCounts: normalizedRecentCounts,
             nextIntake: nextIntake,
-            localeIdentifier: defaults?.string(forKey: "app_locale") ?? Locale.current.identifier,
-            homeTitle: defaults?.string(forKey: "widget_home_title") ?? "Time on HRT",
+            localeIdentifier: localeIdentifier,
+            homeTitle: defaults?.string(forKey: "widget_home_title") ?? copy.homeTitle,
             homeIntakeText: defaults?.string(forKey: "widget_home_intakes")
-                ?? "\(intakeCount) intakes logged",
-            homeEmptyText: defaults?.string(forKey: "widget_home_empty") ?? "Never taken yet"
+                ?? "",
+            homeEmptyText: defaults?.string(forKey: "widget_home_empty") ?? copy.homeEmpty
         )
     }
 }
@@ -389,7 +391,7 @@ struct HrtWidgetEntryView: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.52)
 
-            if entry.showsIntakes {
+            if entry.showsIntakes && !entry.intakeText.isEmpty {
                 Text(entry.intakeText)
                     .font(.caption)
                     .foregroundColor(.secondary)
@@ -577,7 +579,7 @@ struct HrtWidgetEntryView: View {
     private var accessibilitySummary: String {
         guard entry.hasHrtData else { return "\(entry.homeTitle), \(entry.homeEmptyText)." }
         var summary = "\(entry.homeTitle), \(entry.durationText)."
-        if entry.showsIntakes {
+        if entry.showsIntakes && !entry.intakeText.isEmpty {
             summary += " \(entry.intakeText)."
         }
         return summary
