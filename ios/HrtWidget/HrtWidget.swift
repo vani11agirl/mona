@@ -88,9 +88,7 @@ private struct NextIntakeCountdown {
         if minutes >= 30 * 24 * 60 {
             return (minutes / (30 * 24 * 60), .months)
         }
-        if minutes >= 7 * 24 * 60 {
-            return (minutes / (7 * 24 * 60), .weeks)
-        }
+        // Keep whole-day precision until the month range.
         return (minutes / (24 * 60), .days)
     }
 
@@ -147,7 +145,6 @@ private struct NextIntakeCountdown {
         case minutes
         case hours
         case days
-        case weeks
         case months
 
         func components(value: Int) -> DateComponents {
@@ -155,7 +152,6 @@ private struct NextIntakeCountdown {
             case .minutes: return DateComponents(minute: value)
             case .hours: return DateComponents(hour: value)
             case .days: return DateComponents(day: value)
-            case .weeks: return DateComponents(weekOfMonth: value)
             case .months: return DateComponents(month: value)
             }
         }
@@ -165,7 +161,6 @@ private struct NextIntakeCountdown {
             case .minutes: return .minute
             case .hours: return .hour
             case .days: return .day
-            case .weeks: return .weekOfMonth
             case .months: return .month
             }
         }
@@ -410,6 +405,7 @@ struct HrtWidgetEntryView: View {
                     .padding(.top, 4)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .monaContentMargins()
         .accessibilityElement(children: .combine)
         .accessibilityLabel(accessibilitySummary)
@@ -708,6 +704,11 @@ private extension View {
 }
 
 struct HrtWidget: Widget {
+    private var pickerCopy: WidgetCopy {
+        let savedLocale = UserDefaults(suiteName: appGroupID)?.string(forKey: "app_locale")
+        return WidgetCopy(localeIdentifier: savedLocale ?? Locale.current.identifier)
+    }
+
     private var supportedFamilies: [WidgetFamily] {
         var families: [WidgetFamily] = [
             .systemSmall,
@@ -728,7 +729,7 @@ struct HrtWidget: Widget {
                 .widgetURL(URL(string: "mona-widget://home?homeWidget=true"))
         }
         .configurationDisplayName("Mona")
-        .description("See your HRT duration or your next intake at a glance.")
+        .description(pickerCopy.pickerDescription)
         .supportedFamilies(supportedFamilies)
     }
 }
