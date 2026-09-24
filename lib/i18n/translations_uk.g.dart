@@ -562,6 +562,24 @@ class TranslationsUk extends Translations
   @override
   String get mustBeBetween1And28 => 'Має бути від 1 до 28';
   @override
+  String get iosWidgetNextIntake => 'Наступний прийом';
+  @override
+  String get iosWidgetIntakeDue => 'Час прийому';
+  @override
+  String get iosWidgetDue => 'Час';
+  @override
+  String get iosWidgetLate => 'Прострочено';
+  @override
+  String get iosWidgetNoPlan => 'Немає плану';
+  @override
+  String get iosWidgetNoSchedule => 'Розкладу немає';
+  @override
+  String get iosWidgetNow => 'Зараз';
+  @override
+  String iosWidgetFuture({required Object duration}) => 'через ${duration}';
+  @override
+  String iosWidgetPast({required Object duration}) => '${duration} тому';
+  @override
   String daysAgoCount({required num count}) =>
       (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('uk'))(
         count,
@@ -1023,6 +1041,15 @@ extension on TranslationsUk {
       'placementSuggestionPerScheduleDescription' =>
         'Базувати пропозицію наступного місця лише на історії цього розкладу.',
       'mustBeBetween1And28' => 'Має бути від 1 до 28',
+      'iosWidgetNextIntake' => 'Наступний прийом',
+      'iosWidgetIntakeDue' => 'Час прийому',
+      'iosWidgetDue' => 'Час',
+      'iosWidgetLate' => 'Прострочено',
+      'iosWidgetNoPlan' => 'Немає плану',
+      'iosWidgetNoSchedule' => 'Розкладу немає',
+      'iosWidgetNow' => 'Зараз',
+      'iosWidgetFuture' => ({required Object duration}) => 'через ${duration}',
+      'iosWidgetPast' => ({required Object duration}) => '${duration} тому',
       'daysAgoCount' => ({required num count}) =>
           (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('uk'))(
             count,

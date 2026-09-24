@@ -305,6 +305,38 @@ void main() {
       );
     });
 
+    test('refreshes iOS widget language after the app locale changes',
+        () async {
+      // Arrange
+      HomeWidgetService.isIOSPlatform = () => true;
+      final service = HomeWidgetService(
+        saveWidgetData: (id, data) async => saved.add({'id': id, 'data': data}),
+        setAppGroupId: (groupId) async => appGroups.add(groupId),
+        updateWidget: ({iOSName, qualifiedAndroidName}) async => updated.add(
+          (iOSName: iOSName, qualifiedAndroidName: qualifiedAndroidName),
+        ),
+      );
+
+      // Act
+      await service.sync(intakeProvider, scheduleProvider, localeProvider);
+      when(localeProvider.locale).thenReturn(const Locale('de'));
+      await service.sync(intakeProvider, scheduleProvider, localeProvider);
+
+      // Assert
+      expect(
+        saved.where((entry) => entry['id'] == 'app_locale').toList(),
+        [
+          {'id': 'app_locale', 'data': 'fr'},
+          {'id': 'app_locale', 'data': 'de'},
+        ],
+      );
+      expect(
+        saved.where((entry) => entry['id'] == 'widget_home_title').last['data'],
+        'Zeit auf HET',
+      );
+      expect(updated, hasLength(2));
+    });
+
     test('pushes a null first date to clear the widget', () async {
       // Arrange
       final service = HomeWidgetService(

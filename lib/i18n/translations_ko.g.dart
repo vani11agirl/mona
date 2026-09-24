@@ -243,6 +243,24 @@ class TranslationsKo extends Translations
   @override
   String get transdermalSpray => '피부 흡수형(스프레이)';
   @override
+  String get iosWidgetNextIntake => '다음 투여';
+  @override
+  String get iosWidgetIntakeDue => '투여 시간';
+  @override
+  String get iosWidgetDue => '투여';
+  @override
+  String get iosWidgetLate => '지연';
+  @override
+  String get iosWidgetNoPlan => '계획 없음';
+  @override
+  String get iosWidgetNoSchedule => '일정 없음';
+  @override
+  String get iosWidgetNow => '지금';
+  @override
+  String iosWidgetFuture({required Object duration}) => '${duration} 후';
+  @override
+  String iosWidgetPast({required Object duration}) => '${duration} 전';
+  @override
   String schedulesCreated({required num count}) =>
       (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ko'))(
         count,
@@ -360,6 +378,15 @@ extension on TranslationsKo {
       'implant' => '체내 이식(임플란트)',
       'suppository' => '좌약',
       'transdermalSpray' => '피부 흡수형(스프레이)',
+      'iosWidgetNextIntake' => '다음 투여',
+      'iosWidgetIntakeDue' => '투여 시간',
+      'iosWidgetDue' => '투여',
+      'iosWidgetLate' => '지연',
+      'iosWidgetNoPlan' => '계획 없음',
+      'iosWidgetNoSchedule' => '일정 없음',
+      'iosWidgetNow' => '지금',
+      'iosWidgetFuture' => ({required Object duration}) => '${duration} 후',
+      'iosWidgetPast' => ({required Object duration}) => '${duration} 전',
       'schedulesCreated' => ({required num count}) =>
           (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ko'))(
             count,

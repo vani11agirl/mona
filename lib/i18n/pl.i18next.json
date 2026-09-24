@@ -306,5 +306,14 @@
   "mustBePositiveNumber": "Musi być liczbą dodatnią",
   "mustBeBetween1And28": "Musi być liczbą od 1 do 28",
   "invalidTotalAmount": "Nieprawidłowa łączna ilość",
-  "cannotExceedTotalCapacity": "Nie może przekraczać całkowitej pojemności"
+  "cannotExceedTotalCapacity": "Nie może przekraczać całkowitej pojemności",
+  "iosWidgetNextIntake": "Następne przyjęcie",
+  "iosWidgetIntakeDue": "Czas na przyjęcie",
+  "iosWidgetDue": "Teraz",
+  "iosWidgetLate": "Po terminie",
+  "iosWidgetNoPlan": "Brak planu",
+  "iosWidgetNoSchedule": "Brak harmonogramu",
+  "iosWidgetNow": "Teraz",
+  "iosWidgetFuture": "za {{duration}}",
+  "iosWidgetPast": "{{duration}} temu"
 }

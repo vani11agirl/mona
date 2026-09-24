@@ -590,6 +590,24 @@ class TranslationsNl extends Translations
   String get scheduleFrequencyDailyDescription =>
       'Elke dag, op specifieke tijden';
   @override
+  String get iosWidgetNextIntake => 'Volgende inname';
+  @override
+  String get iosWidgetIntakeDue => 'Inname verwacht';
+  @override
+  String get iosWidgetDue => 'Nu';
+  @override
+  String get iosWidgetLate => 'Te laat';
+  @override
+  String get iosWidgetNoPlan => 'Geen plan';
+  @override
+  String get iosWidgetNoSchedule => 'Geen schema';
+  @override
+  String get iosWidgetNow => 'Nu';
+  @override
+  String iosWidgetFuture({required Object duration}) => 'over ${duration}';
+  @override
+  String iosWidgetPast({required Object duration}) => '${duration} geleden';
+  @override
   String daysAgoCount({required num count}) =>
       (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('nl'))(
         count,
@@ -1043,6 +1061,15 @@ extension on TranslationsNl {
       'estradiolLevelsTitle' => 'Oestradiolspiegels',
       'unitNgPerMl' => 'ng/mL',
       'scheduleFrequencyDailyDescription' => 'Elke dag, op specifieke tijden',
+      'iosWidgetNextIntake' => 'Volgende inname',
+      'iosWidgetIntakeDue' => 'Inname verwacht',
+      'iosWidgetDue' => 'Nu',
+      'iosWidgetLate' => 'Te laat',
+      'iosWidgetNoPlan' => 'Geen plan',
+      'iosWidgetNoSchedule' => 'Geen schema',
+      'iosWidgetNow' => 'Nu',
+      'iosWidgetFuture' => ({required Object duration}) => 'over ${duration}',
+      'iosWidgetPast' => ({required Object duration}) => '${duration} geleden',
       'daysAgoCount' => ({required num count}) =>
           (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('nl'))(
             count,

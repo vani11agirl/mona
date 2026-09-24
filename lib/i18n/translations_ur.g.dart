@@ -333,6 +333,24 @@ class TranslationsUr extends Translations
   @override
   String get intakeRecorded => 'مدخل ریکارڈ ہوا';
   @override
+  String get iosWidgetNextIntake => 'اگلی خوراک';
+  @override
+  String get iosWidgetIntakeDue => 'خوراک کا وقت';
+  @override
+  String get iosWidgetDue => 'وقت';
+  @override
+  String get iosWidgetLate => 'تاخیر';
+  @override
+  String get iosWidgetNoPlan => 'کوئی منصوبہ نہیں';
+  @override
+  String get iosWidgetNoSchedule => 'کوئی شیڈیول نہیں';
+  @override
+  String get iosWidgetNow => 'ابھی';
+  @override
+  String iosWidgetFuture({required Object duration}) => '${duration} میں';
+  @override
+  String iosWidgetPast({required Object duration}) => '${duration} پہلے';
+  @override
   String daysAgoCount({required num count}) =>
       (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ur'))(
         count,
@@ -563,6 +581,15 @@ extension on TranslationsUr {
           '\u202B${scheduleName} لیجیے',
       'takeIntake' => 'مدخل لیجیے',
       'intakeRecorded' => 'مدخل ریکارڈ ہوا',
+      'iosWidgetNextIntake' => 'اگلی خوراک',
+      'iosWidgetIntakeDue' => 'خوراک کا وقت',
+      'iosWidgetDue' => 'وقت',
+      'iosWidgetLate' => 'تاخیر',
+      'iosWidgetNoPlan' => 'کوئی منصوبہ نہیں',
+      'iosWidgetNoSchedule' => 'کوئی شیڈیول نہیں',
+      'iosWidgetNow' => 'ابھی',
+      'iosWidgetFuture' => ({required Object duration}) => '${duration} میں',
+      'iosWidgetPast' => ({required Object duration}) => '${duration} پہلے',
       'daysAgoCount' => ({required num count}) =>
           (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ur'))(
             count,

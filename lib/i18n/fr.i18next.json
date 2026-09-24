@@ -330,5 +330,14 @@
   "mustBeBetween1And28": "Doit être entre 1 et 28",
   "mustBeAtMost": "Doit être moins de {{max}}",
   "invalidTotalAmount": "Montant total invalide",
-  "cannotExceedTotalCapacity": "Ne peut pas dépasser la capacité totale"
+  "cannotExceedTotalCapacity": "Ne peut pas dépasser la capacité totale",
+  "iosWidgetNextIntake": "Prochaine prise",
+  "iosWidgetIntakeDue": "Prise à faire",
+  "iosWidgetDue": "À prendre",
+  "iosWidgetLate": "En retard",
+  "iosWidgetNoPlan": "Aucun plan",
+  "iosWidgetNoSchedule": "Aucun planning",
+  "iosWidgetNow": "Maintenant",
+  "iosWidgetFuture": "dans {{duration}}",
+  "iosWidgetPast": "il y a {{duration}}"
 }

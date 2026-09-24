@@ -35,5 +35,14 @@
   "scheduleFrequencyMonthlyDescription": "Lo stesso giorno ogni mese",
   "scheduleFrequencyOnDayEveryNMonths_one": "Il giorno {{day}}, ogni mese",
   "scheduleFrequencyOnDayEveryNMonths_many": "Il giorno {{day}}, ogni {{count}} mesi",
-  "scheduleFrequencyOnDayEveryNMonths_other": "Il giorno {{day}}, ogni {{count}} mesi"
+  "scheduleFrequencyOnDayEveryNMonths_other": "Il giorno {{day}}, ogni {{count}} mesi",
+  "iosWidgetNextIntake": "Prossima dose",
+  "iosWidgetIntakeDue": "Dose da assumere",
+  "iosWidgetDue": "Ora",
+  "iosWidgetLate": "In ritardo",
+  "iosWidgetNoPlan": "Nessun piano",
+  "iosWidgetNoSchedule": "Nessun programma",
+  "iosWidgetNow": "Adesso",
+  "iosWidgetFuture": "tra {{duration}}",
+  "iosWidgetPast": "{{duration}} fa"
 }

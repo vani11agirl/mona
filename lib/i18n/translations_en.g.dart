@@ -853,6 +853,33 @@ class Translations with BaseTranslations<AppLocale, Translations> {
   /// en: 'Cannot exceed total capacity'
   String get cannotExceedTotalCapacity => 'Cannot exceed total capacity';
 
+  /// en: 'Next intake'
+  String get iosWidgetNextIntake => 'Next intake';
+
+  /// en: 'Intake due'
+  String get iosWidgetIntakeDue => 'Intake due';
+
+  /// en: 'Due'
+  String get iosWidgetDue => 'Due';
+
+  /// en: 'Late'
+  String get iosWidgetLate => 'Late';
+
+  /// en: 'No plan'
+  String get iosWidgetNoPlan => 'No plan';
+
+  /// en: 'No schedule'
+  String get iosWidgetNoSchedule => 'No schedule';
+
+  /// en: 'Now'
+  String get iosWidgetNow => 'Now';
+
+  /// en: 'in {duration}'
+  String iosWidgetFuture({required Object duration}) => 'in ${duration}';
+
+  /// en: '{duration} ago'
+  String iosWidgetPast({required Object duration}) => '${duration} ago';
+
   /// en: '(one) {{count} day ago} (other) {{count} days ago}'
   String daysAgoCount({required num count}) =>
       (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(
@@ -1349,6 +1376,15 @@ extension on Translations {
       'mustBeAtMost' => ({required Object max}) => 'Must be at most ${max}',
       'invalidTotalAmount' => 'Invalid total amount',
       'cannotExceedTotalCapacity' => 'Cannot exceed total capacity',
+      'iosWidgetNextIntake' => 'Next intake',
+      'iosWidgetIntakeDue' => 'Intake due',
+      'iosWidgetDue' => 'Due',
+      'iosWidgetLate' => 'Late',
+      'iosWidgetNoPlan' => 'No plan',
+      'iosWidgetNoSchedule' => 'No schedule',
+      'iosWidgetNow' => 'Now',
+      'iosWidgetFuture' => ({required Object duration}) => 'in ${duration}',
+      'iosWidgetPast' => ({required Object duration}) => '${duration} ago',
       'daysAgoCount' => ({required num count}) =>
           (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(
             count,

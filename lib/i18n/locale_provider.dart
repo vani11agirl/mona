@@ -36,6 +36,15 @@ class LocaleProvider extends ChangeNotifier {
     }
   }
 
+  void updateSystemLocale(Locale systemLocale) {
+    if (_prefs.savedLanguageTag != null) return;
+    final matched = _matchToSupported(systemLocale);
+    if (_locale == matched) return;
+    _locale = matched;
+    _syncSlang();
+    notifyListeners();
+  }
+
   void _syncSlang() {
     LocaleSettings.setLocaleSync(
       AppLocaleUtils.parse(_locale.toLanguageTag()),

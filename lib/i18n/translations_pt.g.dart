@@ -563,6 +563,24 @@ class TranslationsPt extends Translations
   @override
   String get mustBeBetween1And28 => 'Deve estar entre 1 e 28';
   @override
+  String get iosWidgetNextIntake => 'Próxima toma';
+  @override
+  String get iosWidgetIntakeDue => 'Hora da toma';
+  @override
+  String get iosWidgetDue => 'Agora';
+  @override
+  String get iosWidgetLate => 'Atrasada';
+  @override
+  String get iosWidgetNoPlan => 'Sem plano';
+  @override
+  String get iosWidgetNoSchedule => 'Sem cronograma';
+  @override
+  String get iosWidgetNow => 'Agora';
+  @override
+  String iosWidgetFuture({required Object duration}) => 'daqui a ${duration}';
+  @override
+  String iosWidgetPast({required Object duration}) => 'há ${duration}';
+  @override
   String daysAgoCount({required num count}) =>
       (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('pt'))(
         count,
@@ -1028,6 +1046,16 @@ extension on TranslationsPt {
       'placementSuggestionPerScheduleDescription' =>
         'Baseia a sugestão da próxima zona apenas no histórico deste horário.',
       'mustBeBetween1And28' => 'Deve estar entre 1 e 28',
+      'iosWidgetNextIntake' => 'Próxima toma',
+      'iosWidgetIntakeDue' => 'Hora da toma',
+      'iosWidgetDue' => 'Agora',
+      'iosWidgetLate' => 'Atrasada',
+      'iosWidgetNoPlan' => 'Sem plano',
+      'iosWidgetNoSchedule' => 'Sem cronograma',
+      'iosWidgetNow' => 'Agora',
+      'iosWidgetFuture' => ({required Object duration}) =>
+          'daqui a ${duration}',
+      'iosWidgetPast' => ({required Object duration}) => 'há ${duration}',
       'daysAgoCount' => ({required num count}) =>
           (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('pt'))(
             count,

@@ -105,6 +105,24 @@ class TranslationsEt extends Translations
   @override
   String get importDataSubtitle => 'Taasta andmed JSON-vormingus varukoopiast';
   @override
+  String get iosWidgetNextIntake => 'Järgmine annus';
+  @override
+  String get iosWidgetIntakeDue => 'Annuse aeg';
+  @override
+  String get iosWidgetDue => 'Aeg';
+  @override
+  String get iosWidgetLate => 'Hilinenud';
+  @override
+  String get iosWidgetNoPlan => 'Plaan puudub';
+  @override
+  String get iosWidgetNoSchedule => 'Ajakava puudub';
+  @override
+  String get iosWidgetNow => 'Praegu';
+  @override
+  String iosWidgetFuture({required Object duration}) => '${duration} pärast';
+  @override
+  String iosWidgetPast({required Object duration}) => '${duration} tagasi';
+  @override
   String daysAgoCount({required num count}) =>
       (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('et'))(
         count,
@@ -161,6 +179,15 @@ extension on TranslationsEt {
           'Eksportimine ei õnnestunud: ${error}',
       'importDataTitle' => 'Impordi andmed',
       'importDataSubtitle' => 'Taasta andmed JSON-vormingus varukoopiast',
+      'iosWidgetNextIntake' => 'Järgmine annus',
+      'iosWidgetIntakeDue' => 'Annuse aeg',
+      'iosWidgetDue' => 'Aeg',
+      'iosWidgetLate' => 'Hilinenud',
+      'iosWidgetNoPlan' => 'Plaan puudub',
+      'iosWidgetNoSchedule' => 'Ajakava puudub',
+      'iosWidgetNow' => 'Praegu',
+      'iosWidgetFuture' => ({required Object duration}) => '${duration} pärast',
+      'iosWidgetPast' => ({required Object duration}) => '${duration} tagasi',
       'daysAgoCount' => ({required num count}) =>
           (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('et'))(
             count,

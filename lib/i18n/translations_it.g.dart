@@ -107,6 +107,24 @@ class TranslationsIt extends Translations
   String get scheduleFrequencyMonthlyDescription =>
       'Lo stesso giorno ogni mese';
   @override
+  String get iosWidgetNextIntake => 'Prossima dose';
+  @override
+  String get iosWidgetIntakeDue => 'Dose da assumere';
+  @override
+  String get iosWidgetDue => 'Ora';
+  @override
+  String get iosWidgetLate => 'In ritardo';
+  @override
+  String get iosWidgetNoPlan => 'Nessun piano';
+  @override
+  String get iosWidgetNoSchedule => 'Nessun programma';
+  @override
+  String get iosWidgetNow => 'Adesso';
+  @override
+  String iosWidgetFuture({required Object duration}) => 'tra ${duration}';
+  @override
+  String iosWidgetPast({required Object duration}) => '${duration} fa';
+  @override
   String daysAgoCount({required num count}) =>
       (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(
         count,
@@ -174,6 +192,15 @@ extension on TranslationsIt {
       'scheduleFrequencyWeeklyDescription' => 'Alcuni giorni della settimana',
       'scheduleFrequencyMonthly' => 'Mensile',
       'scheduleFrequencyMonthlyDescription' => 'Lo stesso giorno ogni mese',
+      'iosWidgetNextIntake' => 'Prossima dose',
+      'iosWidgetIntakeDue' => 'Dose da assumere',
+      'iosWidgetDue' => 'Ora',
+      'iosWidgetLate' => 'In ritardo',
+      'iosWidgetNoPlan' => 'Nessun piano',
+      'iosWidgetNoSchedule' => 'Nessun programma',
+      'iosWidgetNow' => 'Adesso',
+      'iosWidgetFuture' => ({required Object duration}) => 'tra ${duration}',
+      'iosWidgetPast' => ({required Object duration}) => '${duration} fa',
       'daysAgoCount' => ({required num count}) =>
           (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('it'))(
             count,

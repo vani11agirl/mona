@@ -552,6 +552,24 @@ class TranslationsIs extends Translations
   @override
   String get noItemsToAdd => 'Engar atriði tiltækar';
   @override
+  String get iosWidgetNextIntake => 'Næsta inntaka';
+  @override
+  String get iosWidgetIntakeDue => 'Tími fyrir inntöku';
+  @override
+  String get iosWidgetDue => 'Kominn tími';
+  @override
+  String get iosWidgetLate => 'Seint';
+  @override
+  String get iosWidgetNoPlan => 'Engin áætlun';
+  @override
+  String get iosWidgetNoSchedule => 'Engin áætlun';
+  @override
+  String get iosWidgetNow => 'Núna';
+  @override
+  String iosWidgetFuture({required Object duration}) => 'eftir ${duration}';
+  @override
+  String iosWidgetPast({required Object duration}) => 'fyrir ${duration} síðan';
+  @override
   String daysAgoCount({required num count}) =>
       (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('is'))(
         count,
@@ -986,6 +1004,16 @@ extension on TranslationsIs {
         'Áætlar næstu inntöku með fullu millibili eftir að þú tókst hana síðast',
       'chooseItem' => 'Veldu atriði',
       'noItemsToAdd' => 'Engar atriði tiltækar',
+      'iosWidgetNextIntake' => 'Næsta inntaka',
+      'iosWidgetIntakeDue' => 'Tími fyrir inntöku',
+      'iosWidgetDue' => 'Kominn tími',
+      'iosWidgetLate' => 'Seint',
+      'iosWidgetNoPlan' => 'Engin áætlun',
+      'iosWidgetNoSchedule' => 'Engin áætlun',
+      'iosWidgetNow' => 'Núna',
+      'iosWidgetFuture' => ({required Object duration}) => 'eftir ${duration}',
+      'iosWidgetPast' => ({required Object duration}) =>
+          'fyrir ${duration} síðan',
       'daysAgoCount' => ({required num count}) =>
           (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('is'))(
             count,

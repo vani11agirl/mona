@@ -591,6 +591,24 @@ class TranslationsDe extends Translations
   @override
   String get unitNgPerMl => 'ng/mL';
   @override
+  String get iosWidgetNextIntake => 'Nächste Einnahme';
+  @override
+  String get iosWidgetIntakeDue => 'Einnahme fällig';
+  @override
+  String get iosWidgetDue => 'Fällig';
+  @override
+  String get iosWidgetLate => 'Verspätet';
+  @override
+  String get iosWidgetNoPlan => 'Kein Plan';
+  @override
+  String get iosWidgetNoSchedule => 'Kein Zeitplan';
+  @override
+  String get iosWidgetNow => 'Jetzt';
+  @override
+  String iosWidgetFuture({required Object duration}) => 'in ${duration}';
+  @override
+  String iosWidgetPast({required Object duration}) => 'vor ${duration}';
+  @override
   String daysAgoCount({required num count}) =>
       (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('de'))(
         count,
@@ -1046,6 +1064,15 @@ extension on TranslationsDe {
         'Trage eine Blutuntersuchung oder Estradiol-Injektion ein, um loszulegen',
       'estradiolLevelsTitle' => 'Estradiol-Werte',
       'unitNgPerMl' => 'ng/mL',
+      'iosWidgetNextIntake' => 'Nächste Einnahme',
+      'iosWidgetIntakeDue' => 'Einnahme fällig',
+      'iosWidgetDue' => 'Fällig',
+      'iosWidgetLate' => 'Verspätet',
+      'iosWidgetNoPlan' => 'Kein Plan',
+      'iosWidgetNoSchedule' => 'Kein Zeitplan',
+      'iosWidgetNow' => 'Jetzt',
+      'iosWidgetFuture' => ({required Object duration}) => 'in ${duration}',
+      'iosWidgetPast' => ({required Object duration}) => 'vor ${duration}',
       'daysAgoCount' => ({required num count}) =>
           (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('de'))(
             count,

@@ -94,7 +94,8 @@ class _MonaAppState extends State<MonaApp> with WidgetsBindingObserver {
     try {
       await HomeWidget.setAppGroupId(HomeWidgetService.appGroupId);
       if (!mounted) return;
-      _widgetClickSubscription = HomeWidget.widgetClicked.listen(_openWidgetUrl);
+      _widgetClickSubscription =
+          HomeWidget.widgetClicked.listen(_openWidgetUrl);
       _openWidgetUrl(await HomeWidget.initiallyLaunchedFromHomeWidget());
     } catch (error) {
       debugPrint('Could not initialize widget tap navigation: $error');
@@ -144,6 +145,14 @@ class _MonaAppState extends State<MonaApp> with WidgetsBindingObserver {
     } else if (state == AppLifecycleState.paused) {
       _regenerateHomeWidget();
     }
+  }
+
+  @override
+  void didChangeLocales(List<Locale>? locales) {
+    if (!_initialized) return;
+    _localeProvider.updateSystemLocale(
+      locales?.first ?? WidgetsBinding.instance.platformDispatcher.locale,
+    );
   }
 
   @override

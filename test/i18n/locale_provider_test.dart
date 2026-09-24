@@ -150,5 +150,38 @@ void main() {
       // Assert
       expect(provider.locale, const Locale('de'));
     });
+
+    test('updates followers when the system language changes', () async {
+      // Arrange
+      SharedPreferences.setMockInitialValues({});
+      final preferences = await PreferencesService.init();
+      final provider = LocaleProvider(preferences);
+      var listenerCalls = 0;
+      provider.addListener(() => listenerCalls++);
+
+      // Act
+      provider.updateSystemLocale(const Locale('fr', 'FR'));
+
+      // Assert
+      expect(provider.locale, const Locale('fr'));
+      expect(listenerCalls, 1);
+    });
+
+    test('keeps the chosen language when the system language changes',
+        () async {
+      // Arrange
+      SharedPreferences.setMockInitialValues({'language_tag': 'pt-BR'});
+      final preferences = await PreferencesService.init();
+      final provider = LocaleProvider(preferences);
+      var listenerCalls = 0;
+      provider.addListener(() => listenerCalls++);
+
+      // Act
+      provider.updateSystemLocale(const Locale('de', 'DE'));
+
+      // Assert
+      expect(provider.locale, const Locale('pt', 'BR'));
+      expect(listenerCalls, 0);
+    });
   });
 }

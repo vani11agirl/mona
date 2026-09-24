@@ -249,5 +249,14 @@
   "onHrtForMonths_other": "เทคฮอร์โมนมาแล้ว {{count}} เดือน",
   "onHrtForYears_other": "เทคฮอร์โมนมาแล้ว {{count}} ปี",
   "intakesLoggedCount_other": "บันทึกไปแล้ว {{count}} ครั้ง",
-  "HrtCounterDescription": "แสดงว่าคุณเทคฮอร์โมนมานานขนาดใหนและเทคกี่ครั้ง"
+  "HrtCounterDescription": "แสดงว่าคุณเทคฮอร์โมนมานานขนาดใหนและเทคกี่ครั้ง",
+  "iosWidgetNextIntake": "รับยาครั้งถัดไป",
+  "iosWidgetIntakeDue": "ถึงเวลารับยา",
+  "iosWidgetDue": "ถึงเวลา",
+  "iosWidgetLate": "เลยกำหนด",
+  "iosWidgetNoPlan": "ไม่มีแผน",
+  "iosWidgetNoSchedule": "ไม่มีตารางเวลา",
+  "iosWidgetNow": "ตอนนี้",
+  "iosWidgetFuture": "อีก {{duration}}",
+  "iosWidgetPast": "{{duration}} ที่ผ่านมา"
 }

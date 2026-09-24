@@ -283,5 +283,14 @@
   "mustBePositiveNumber": "Måste vara ett positivt tal",
   "mustBeBetween1And28": "Måste vara mellan 1 och 28",
   "invalidTotalAmount": "Ogiltig totalmängd",
-  "cannotExceedTotalCapacity": "Kan inte överstiga total kapacitet"
+  "cannotExceedTotalCapacity": "Kan inte överstiga total kapacitet",
+  "iosWidgetNextIntake": "Nästa intag",
+  "iosWidgetIntakeDue": "Dags för intag",
+  "iosWidgetDue": "Nu",
+  "iosWidgetLate": "Försenad",
+  "iosWidgetNoPlan": "Ingen plan",
+  "iosWidgetNoSchedule": "Inga scheman",
+  "iosWidgetNow": "Nu",
+  "iosWidgetFuture": "om {{duration}}",
+  "iosWidgetPast": "för {{duration}} sedan"
 }

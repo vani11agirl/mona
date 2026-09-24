@@ -395,6 +395,24 @@ class TranslationsGl extends Translations
   @override
   String get cyproteroneAcetate => 'Acetato de ciproterona';
   @override
+  String get iosWidgetNextIntake => 'Próxima toma';
+  @override
+  String get iosWidgetIntakeDue => 'Toma pendente';
+  @override
+  String get iosWidgetDue => 'Pendente';
+  @override
+  String get iosWidgetLate => 'Atrasada';
+  @override
+  String get iosWidgetNoPlan => 'Sen plan';
+  @override
+  String get iosWidgetNoSchedule => 'Sen horarios';
+  @override
+  String get iosWidgetNow => 'Agora';
+  @override
+  String iosWidgetFuture({required Object duration}) => 'en ${duration}';
+  @override
+  String iosWidgetPast({required Object duration}) => 'hai ${duration}';
+  @override
   String daysAgoCount({required num count}) =>
       (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('gl'))(
         count,
@@ -656,6 +674,15 @@ extension on TranslationsGl {
       'dihydrotestosterone' => 'Dihidrotestosterona',
       'spironolactone' => 'Espironolactona',
       'cyproteroneAcetate' => 'Acetato de ciproterona',
+      'iosWidgetNextIntake' => 'Próxima toma',
+      'iosWidgetIntakeDue' => 'Toma pendente',
+      'iosWidgetDue' => 'Pendente',
+      'iosWidgetLate' => 'Atrasada',
+      'iosWidgetNoPlan' => 'Sen plan',
+      'iosWidgetNoSchedule' => 'Sen horarios',
+      'iosWidgetNow' => 'Agora',
+      'iosWidgetFuture' => ({required Object duration}) => 'en ${duration}',
+      'iosWidgetPast' => ({required Object duration}) => 'hai ${duration}',
       'daysAgoCount' => ({required num count}) =>
           (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('gl'))(
             count,

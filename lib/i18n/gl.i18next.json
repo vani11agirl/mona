@@ -177,5 +177,14 @@
   "nandrolone": "Nandrolona",
   "dihydrotestosterone": "Dihidrotestosterona",
   "spironolactone": "Espironolactona",
-  "cyproteroneAcetate": "Acetato de ciproterona"
+  "cyproteroneAcetate": "Acetato de ciproterona",
+  "iosWidgetNextIntake": "Próxima toma",
+  "iosWidgetIntakeDue": "Toma pendente",
+  "iosWidgetDue": "Pendente",
+  "iosWidgetLate": "Atrasada",
+  "iosWidgetNoPlan": "Sen plan",
+  "iosWidgetNoSchedule": "Sen horarios",
+  "iosWidgetNow": "Agora",
+  "iosWidgetFuture": "en {{duration}}",
+  "iosWidgetPast": "hai {{duration}}"
 }

@@ -293,5 +293,14 @@
   "empty_levels": "Voeg een bloedtest toe of log een estradiol injectie om te beginnen",
   "estradiolLevelsTitle": "Oestradiolspiegels",
   "unitNgPerMl": "ng/mL",
-  "scheduleFrequencyDailyDescription": "Elke dag, op specifieke tijden"
+  "scheduleFrequencyDailyDescription": "Elke dag, op specifieke tijden",
+  "iosWidgetNextIntake": "Volgende inname",
+  "iosWidgetIntakeDue": "Inname verwacht",
+  "iosWidgetDue": "Nu",
+  "iosWidgetLate": "Te laat",
+  "iosWidgetNoPlan": "Geen plan",
+  "iosWidgetNoSchedule": "Geen schema",
+  "iosWidgetNow": "Nu",
+  "iosWidgetFuture": "over {{duration}}",
+  "iosWidgetPast": "{{duration}} geleden"
 }

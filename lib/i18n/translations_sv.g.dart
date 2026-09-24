@@ -564,6 +564,24 @@ class TranslationsSv extends Translations
   @override
   String get cannotExceedTotalCapacity => 'Kan inte överstiga total kapacitet';
   @override
+  String get iosWidgetNextIntake => 'Nästa intag';
+  @override
+  String get iosWidgetIntakeDue => 'Dags för intag';
+  @override
+  String get iosWidgetDue => 'Nu';
+  @override
+  String get iosWidgetLate => 'Försenad';
+  @override
+  String get iosWidgetNoPlan => 'Ingen plan';
+  @override
+  String get iosWidgetNoSchedule => 'Inga scheman';
+  @override
+  String get iosWidgetNow => 'Nu';
+  @override
+  String iosWidgetFuture({required Object duration}) => 'om ${duration}';
+  @override
+  String iosWidgetPast({required Object duration}) => 'för ${duration} sedan';
+  @override
   String administrationRouteUnitMl({required num count}) =>
       (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('sv'))(
         count,
@@ -1005,6 +1023,16 @@ extension on TranslationsSv {
       'mustBeBetween1And28' => 'Måste vara mellan 1 och 28',
       'invalidTotalAmount' => 'Ogiltig totalmängd',
       'cannotExceedTotalCapacity' => 'Kan inte överstiga total kapacitet',
+      'iosWidgetNextIntake' => 'Nästa intag',
+      'iosWidgetIntakeDue' => 'Dags för intag',
+      'iosWidgetDue' => 'Nu',
+      'iosWidgetLate' => 'Försenad',
+      'iosWidgetNoPlan' => 'Ingen plan',
+      'iosWidgetNoSchedule' => 'Inga scheman',
+      'iosWidgetNow' => 'Nu',
+      'iosWidgetFuture' => ({required Object duration}) => 'om ${duration}',
+      'iosWidgetPast' => ({required Object duration}) =>
+          'för ${duration} sedan',
       'administrationRouteUnitMl' => ({required num count}) =>
           (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('sv'))(
             count,

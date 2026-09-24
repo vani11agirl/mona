@@ -306,5 +306,14 @@
   "addSiteToGetStarted": "Добавьте место ниже, чтобы начать.",
   "placementSuggestionPerScheduleTitle": "Предлагать по расписанию",
   "placementSuggestionPerScheduleDescription": "Основывать предложение следующего места только на истории этого расписания.",
-  "mustBeBetween1And28": "Должно быть от 1 до 28"
+  "mustBeBetween1And28": "Должно быть от 1 до 28",
+  "iosWidgetNextIntake": "Следующий приём",
+  "iosWidgetIntakeDue": "Пора принять",
+  "iosWidgetDue": "Пора",
+  "iosWidgetLate": "Просрочено",
+  "iosWidgetNoPlan": "Нет плана",
+  "iosWidgetNoSchedule": "Нет расписания",
+  "iosWidgetNow": "Сейчас",
+  "iosWidgetFuture": "через {{duration}}",
+  "iosWidgetPast": "{{duration}} назад"
 }
