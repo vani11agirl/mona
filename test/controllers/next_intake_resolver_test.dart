@@ -12,6 +12,7 @@ void main() {
   final noon = DateTime(2026, 6, 1, 12);
 
   test('ignores as-needed schedules and returns null without a due intake', () {
+    // Arrange
     final schedule = aMedicationSchedule(
       scheduling: anAsNeededStrategy(),
       startDate: monday,
@@ -24,11 +25,17 @@ void main() {
       ),
     ];
 
-    expect(resolveNextIntake([], noon), isNull);
-    expect(resolveNextIntake(slots, noon), isNull);
+    // Act
+    final withoutSlots = resolveNextIntake([], noon);
+    final withAsNeededSlot = resolveNextIntake(slots, noon);
+
+    // Assert
+    expect(withoutSlots, isNull);
+    expect(withAsNeededSlot, isNull);
   });
 
   test('oldest missed intake takes priority over upcoming intakes', () {
+    // Arrange
     final schedule = aMedicationSchedule(
       scheduling: anIntervalStrategy(intervalDays: 7),
       startDate: monday,
@@ -48,7 +55,10 @@ void main() {
       ),
     ];
 
+    // Act
     final result = resolveNextIntake(slots, noon)!;
+
+    // Assert
     expect(result.date, overdue);
     expect(result.time, isNull);
     expect(result.interval, const Duration(days: 7));
@@ -56,6 +66,7 @@ void main() {
   });
 
   test('daily schedules use intake times, not just the calendar day', () {
+    // Arrange
     final schedule = aMedicationSchedule(
       scheduling: aDailyStrategy(intakeTimes: const [morning, afternoon]),
       startDate: monday,
@@ -75,13 +86,17 @@ void main() {
       ),
     ];
 
+    // Act
     final result = resolveNextIntake(slots, noon)!;
+
+    // Assert
     expect(result.time, morning);
     expect(result.interval, const Duration(hours: 18));
     expect(result.isOverdue, isTrue);
   });
 
   test('completed daily intake advances to its next occurrence', () {
+    // Arrange
     final schedule = aMedicationSchedule(
       scheduling: aDailyStrategy(intakeTimes: const [morning]),
       startDate: monday,
@@ -93,7 +108,10 @@ void main() {
       time: morning,
     );
 
+    // Act
     final result = resolveNextIntake([slot], noon)!;
+
+    // Assert
     expect(result.date, monday.add(const Duration(days: 1)));
     expect(result.time, morning);
     expect(result.interval, const Duration(days: 1));
@@ -101,6 +119,7 @@ void main() {
   });
 
   test('completed interval intake advances by its configured interval', () {
+    // Arrange
     final schedule = aMedicationSchedule(
       scheduling: anIntervalStrategy(intervalDays: 5),
       startDate: monday,
@@ -111,13 +130,17 @@ void main() {
       date: monday,
     );
 
+    // Act
     final result = resolveNextIntake([slot], noon)!;
+
+    // Assert
     expect(result.date, monday.add(const Duration(days: 5)));
     expect(result.interval, const Duration(days: 5));
     expect(result.isOverdue, isFalse);
   });
 
   test('today-overdue interval points to the missed previous date', () {
+    // Arrange
     final previous = monday.subtract(const Duration(days: 7));
     final schedule = aMedicationSchedule(
       scheduling: anIntervalStrategy(intervalDays: 7),
@@ -129,12 +152,16 @@ void main() {
       date: monday,
     );
 
+    // Act
     final result = resolveNextIntake([slot], noon)!;
+
+    // Assert
     expect(result.date, previous);
     expect(result.isOverdue, isTrue);
   });
 
   test('dynamic interval already contains the post-intake due date', () {
+    // Arrange
     final schedule = aMedicationSchedule(
       scheduling: aDynamicIntervalStrategy(intervalDays: 5),
       startDate: monday,
@@ -146,12 +173,16 @@ void main() {
       date: dueDate,
     );
 
+    // Act
     final result = resolveNextIntake([slot], noon)!;
+
+    // Assert
     expect(result.date, dueDate);
     expect(result.interval, const Duration(days: 5));
   });
 
   test('completed weekly intake advances to the next configured weekday', () {
+    // Arrange
     final schedule = aMedicationSchedule(
       scheduling: aWeeklyStrategy(daysOfWeek: const [1, 4]),
       startDate: monday,
@@ -162,12 +193,16 @@ void main() {
       date: monday,
     );
 
+    // Act
     final result = resolveNextIntake([slot], noon)!;
+
+    // Assert
     expect(result.date, monday.add(const Duration(days: 3)));
     expect(result.interval, const Duration(days: 3));
   });
 
   test('today-overdue weekly intake points to the previous weekday', () {
+    // Arrange
     final schedule = aMedicationSchedule(
       scheduling: aWeeklyStrategy(daysOfWeek: const [1, 4]),
       startDate: monday.subtract(const Duration(days: 7)),
@@ -178,13 +213,17 @@ void main() {
       date: monday,
     );
 
+    // Act
     final result = resolveNextIntake([slot], noon)!;
+
+    // Assert
     expect(result.date, monday.subtract(const Duration(days: 4)));
     expect(result.interval, const Duration(days: 3));
     expect(result.isOverdue, isTrue);
   });
 
   test('monthly interval uses the actual number of calendar days', () {
+    // Arrange
     final due = Date(year: 2026, month: 6, day: 21);
     final schedule = aMedicationSchedule(
       scheduling: aMonthlyStrategy(dayOfMonth: 21),
@@ -196,12 +235,16 @@ void main() {
       date: due,
     );
 
+    // Act
     final result = resolveNextIntake([slot], noon)!;
+
+    // Assert
     expect(result.date, Date(year: 2026, month: 7, day: 21));
     expect(result.interval, const Duration(days: 30));
   });
 
   test('monthly interval respects a short February', () {
+    // Arrange
     final due = Date(year: 2026, month: 3, day: 21);
     final schedule = aMedicationSchedule(
       scheduling: aMonthlyStrategy(dayOfMonth: 21),
@@ -213,10 +256,15 @@ void main() {
       date: due,
     );
 
-    expect(resolveNextIntake([slot], noon)!.interval, const Duration(days: 28));
+    // Act
+    final result = resolveNextIntake([slot], noon)!;
+
+    // Assert
+    expect(result.interval, const Duration(days: 28));
   });
 
   test('today-overdue monthly intake points to the previous month', () {
+    // Arrange
     final due = Date(year: 2026, month: 6, day: 21);
     final schedule = aMedicationSchedule(
       scheduling: aMonthlyStrategy(dayOfMonth: 21),
@@ -228,12 +276,16 @@ void main() {
       date: due,
     );
 
+    // Act
     final result = resolveNextIntake([slot], noon)!;
+
+    // Assert
     expect(result.date, Date(year: 2026, month: 5, day: 21));
     expect(result.isOverdue, isTrue);
   });
 
   test('an intake before 4am belongs to the preceding logical day', () {
+    // Arrange
     const late = TimeOfDay(hour: 1, minute: 0);
     final schedule = aMedicationSchedule(
       scheduling: aDailyStrategy(intakeTimes: const [late]),
@@ -246,9 +298,13 @@ void main() {
       time: late,
     );
 
-    expect(resolveNextIntake([slot], DateTime(2026, 6, 2, 0, 30))!.isOverdue,
-        isFalse);
-    expect(resolveNextIntake([slot], DateTime(2026, 6, 2, 1, 30))!.isOverdue,
-        isTrue);
+    // Act
+    final beforeIntake =
+        resolveNextIntake([slot], DateTime(2026, 6, 2, 0, 30))!;
+    final afterIntake = resolveNextIntake([slot], DateTime(2026, 6, 2, 1, 30))!;
+
+    // Assert
+    expect(beforeIntake.isOverdue, isFalse);
+    expect(afterIntake.isOverdue, isTrue);
   });
 }
