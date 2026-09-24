@@ -405,7 +405,7 @@ class TranslationsSv extends Translations
   @override
   String get concentration => 'Koncentration';
   @override
-  String concentrationLabelPerUnit({required Object unit}) => 'Dos per ${unit}';
+  String dosePerUnitLabel({required Object unit}) => 'Dos per ${unit}';
   @override
   String get editItem => 'Redigera artikel';
   @override
@@ -942,8 +942,7 @@ extension on TranslationsSv {
       'adminRoute' => 'Administreringsväg',
       'totalAmount' => 'Total mängd',
       'concentration' => 'Koncentration',
-      'concentrationLabelPerUnit' => ({required Object unit}) =>
-          'Dos per ${unit}',
+      'dosePerUnitLabel' => ({required Object unit}) => 'Dos per ${unit}',
       'editItem' => 'Redigera artikel',
       'usedAmount' => 'Använd mängd',
       'deleteItem' => ({required Object name}) => 'Ta bort ${name}?',

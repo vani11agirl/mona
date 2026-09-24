@@ -322,6 +322,12 @@ class Translations with BaseTranslations<AppLocale, Translations> {
   String get updateDownloadFailed =>
       'Download failed. Please check your connection.';
 
+  /// en: 'Secret settings'
+  String get secretSettings => 'Secret settings';
+
+  /// en: 'Slime mode'
+  String get slimeMode => 'Slime mode';
+
   /// en: 'Time to take {scheduleName}'
   String notificationMedicationReminderTitle({required Object scheduleName}) =>
       'Time to take ${scheduleName}';
@@ -480,6 +486,24 @@ class Translations with BaseTranslations<AppLocale, Translations> {
   /// en: 'Estradiol levels'
   String get estradiolLevelsTitle => 'Estradiol levels';
 
+  /// en: 'W'
+  String get week => 'W';
+
+  /// en: '2 W'
+  String get twoWeeks => '2 W';
+
+  /// en: '3 M'
+  String get threeMonths => '3 M';
+
+  /// en: '6 M'
+  String get sixMonths => '6 M';
+
+  /// en: 'M'
+  String get month => 'M';
+
+  /// en: 'Y'
+  String get year => 'Y';
+
   /// en: 'Taken blood tests will appear here. Start by using the Add button!'
   String get empty_blood_tests =>
       'Taken blood tests will appear here. Start by using the Add button!';
@@ -533,8 +557,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
   String get concentration => 'Concentration';
 
   /// en: 'Dose per {unit}'
-  String concentrationLabelPerUnit({required Object unit}) =>
-      'Dose per ${unit}';
+  String dosePerUnitLabel({required Object unit}) => 'Dose per ${unit}';
 
   /// en: 'Edit item'
   String get editItem => 'Edit item';
@@ -753,6 +776,9 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 
   /// en: 'mg'
   String get unitMilligram => 'mg';
+
+  /// en: 'µg/day'
+  String get unitMicrogramPerDay => 'µg/day';
 
   /// en: 'pg/mL'
   String get unitPgPerMl => 'pg/mL';
@@ -1189,6 +1215,8 @@ extension on Translations {
           'Failed to open installer: ${message}',
       'updateDownloadFailed' =>
         'Download failed. Please check your connection.',
+      'secretSettings' => 'Secret settings',
+      'slimeMode' => 'Slime mode',
       'notificationMedicationReminderTitle' =>
         ({required Object scheduleName}) => 'Time to take ${scheduleName}',
       'notificationMedicationReminderBodyDate' => ({required Object date}) =>
@@ -1247,6 +1275,12 @@ extension on Translations {
         'Add a blood test or log an estradiol injection to get started',
       'bloodTestsTitle' => 'Blood Tests',
       'estradiolLevelsTitle' => 'Estradiol levels',
+      'week' => 'W',
+      'twoWeeks' => '2 W',
+      'threeMonths' => '3 M',
+      'sixMonths' => '6 M',
+      'month' => 'M',
+      'year' => 'Y',
       'empty_blood_tests' =>
         'Taken blood tests will appear here. Start by using the Add button!',
       'addBloodTest' => 'Add a blood test',
@@ -1266,8 +1300,7 @@ extension on Translations {
       'adminRoute' => 'Administration route',
       'totalAmount' => 'Total amount',
       'concentration' => 'Concentration',
-      'concentrationLabelPerUnit' => ({required Object unit}) =>
-          'Dose per ${unit}',
+      'dosePerUnitLabel' => ({required Object unit}) => 'Dose per ${unit}',
       'editItem' => 'Edit item',
       'usedAmount' => 'Used amount',
       'deleteItem' => ({required Object name}) => 'Delete ${name}?',
@@ -1342,6 +1375,7 @@ extension on Translations {
       'deliveryFormSachet' => 'Sachet',
       'deliveryFormGram' => 'Tube',
       'unitMilligram' => 'mg',
+      'unitMicrogramPerDay' => 'µg/day',
       'unitPgPerMl' => 'pg/mL',
       'unitPmolPerL' => 'pmol/L',
       'unitNgPerDl' => 'ng/dL',

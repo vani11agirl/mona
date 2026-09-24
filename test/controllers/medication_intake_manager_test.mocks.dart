@@ -223,15 +223,6 @@ class MockMedicationIntakeProvider extends _i1.Mock
       ) as List<_i9.GraphIntake>);
 
   @override
-  double? getGraphSpan(DateTime? tMin) => (super.noSuchMethod(
-        Invocation.method(
-          #getGraphSpan,
-          [tMin],
-        ),
-        returnValueForMissingStub: null,
-      ) as double?);
-
-  @override
   _i10.Date? getLastIntakeLocalDateFromList(
           List<_i7.MedicationIntake>? intakes) =>
       (super.noSuchMethod(
@@ -618,6 +609,13 @@ class MockPreferencesService extends _i1.Mock
       ) as List<_i20.Placement>);
 
   @override
+  List<int> get scheduleOrder => (super.noSuchMethod(
+        Invocation.getter(#scheduleOrder),
+        returnValue: <int>[],
+        returnValueForMissingStub: <int>[],
+      ) as List<int>);
+
+  @override
   bool get placementSuggestionPerSchedule => (super.noSuchMethod(
         Invocation.getter(#placementSuggestionPerSchedule),
         returnValue: false,
@@ -627,6 +625,13 @@ class MockPreferencesService extends _i1.Mock
   @override
   bool get hrtCounterEnabled => (super.noSuchMethod(
         Invocation.getter(#hrtCounterEnabled),
+        returnValue: false,
+        returnValueForMissingStub: false,
+      ) as bool);
+
+  @override
+  bool get slimeModeEnabled => (super.noSuchMethod(
+        Invocation.getter(#slimeModeEnabled),
         returnValue: false,
         returnValueForMissingStub: false,
       ) as bool);
@@ -767,6 +772,16 @@ class MockPreferencesService extends _i1.Mock
       ) as _i8.Future<void>);
 
   @override
+  _i8.Future<void> setScheduleOrder(List<int>? order) => (super.noSuchMethod(
+        Invocation.method(
+          #setScheduleOrder,
+          [order],
+        ),
+        returnValue: _i8.Future<void>.value(),
+        returnValueForMissingStub: _i8.Future<void>.value(),
+      ) as _i8.Future<void>);
+
+  @override
   _i8.Future<void> setPlacementSuggestionPerSchedule(bool? isEnabled) =>
       (super.noSuchMethod(
         Invocation.method(
@@ -781,6 +796,16 @@ class MockPreferencesService extends _i1.Mock
   _i8.Future<void> setHrtCounterEnabled(bool? isEnabled) => (super.noSuchMethod(
         Invocation.method(
           #setHrtCounterEnabled,
+          [isEnabled],
+        ),
+        returnValue: _i8.Future<void>.value(),
+        returnValueForMissingStub: _i8.Future<void>.value(),
+      ) as _i8.Future<void>);
+
+  @override
+  _i8.Future<void> setSlimeModeEnabled(bool? isEnabled) => (super.noSuchMethod(
+        Invocation.method(
+          #setSlimeModeEnabled,
           [isEnabled],
         ),
         returnValue: _i8.Future<void>.value(),

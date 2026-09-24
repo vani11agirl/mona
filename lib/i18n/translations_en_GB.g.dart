@@ -239,6 +239,10 @@ class TranslationsEnGb extends Translations
   String get updateDownloadFailed =>
       'Download failed. Please check your connection.';
   @override
+  String get secretSettings => 'Secret settings';
+  @override
+  String get slimeMode => 'Slime mode';
+  @override
   String notificationMedicationReminderTitle({required Object scheduleName}) =>
       'Time to take ${scheduleName}';
   @override
@@ -347,6 +351,18 @@ class TranslationsEnGb extends Translations
   @override
   String get estradiolLevelsTitle => 'Estradiol levels';
   @override
+  String get week => 'W';
+  @override
+  String get twoWeeks => '2 W';
+  @override
+  String get threeMonths => '3 M';
+  @override
+  String get sixMonths => '6 M';
+  @override
+  String get month => 'M';
+  @override
+  String get year => 'Y';
+  @override
   String get empty_blood_tests =>
       'Taken blood tests will appear here. Start by using the Add button!';
   @override
@@ -382,6 +398,8 @@ class TranslationsEnGb extends Translations
   String get totalAmount => 'Total amount';
   @override
   String get concentration => 'Concentration';
+  @override
+  String dosePerUnitLabel({required Object unit}) => 'Dose per ${unit}';
   @override
   String get editItem => 'Edit item';
   @override
@@ -528,6 +546,8 @@ class TranslationsEnGb extends Translations
   String get deliveryFormGram => 'Tube';
   @override
   String get unitMilligram => 'mg';
+  @override
+  String get unitMicrogramPerDay => 'µg/day';
   @override
   String get unitPgPerMl => 'pg/mL';
   @override
@@ -901,6 +921,8 @@ extension on TranslationsEnGb {
           'Failed to open installer: ${message}',
       'updateDownloadFailed' =>
         'Download failed. Please check your connection.',
+      'secretSettings' => 'Secret settings',
+      'slimeMode' => 'Slime mode',
       'notificationMedicationReminderTitle' =>
         ({required Object scheduleName}) => 'Time to take ${scheduleName}',
       'notificationMedicationReminderBodyDate' => ({required Object date}) =>
@@ -959,6 +981,12 @@ extension on TranslationsEnGb {
         'Add a blood test or log an estradiol injection to get started',
       'bloodTestsTitle' => 'Blood Tests',
       'estradiolLevelsTitle' => 'Estradiol levels',
+      'week' => 'W',
+      'twoWeeks' => '2 W',
+      'threeMonths' => '3 M',
+      'sixMonths' => '6 M',
+      'month' => 'M',
+      'year' => 'Y',
       'empty_blood_tests' =>
         'Taken blood tests will appear here. Start by using the Add button!',
       'addBloodTest' => 'Add a blood test',
@@ -978,6 +1006,7 @@ extension on TranslationsEnGb {
       'adminRoute' => 'Administration route',
       'totalAmount' => 'Total amount',
       'concentration' => 'Concentration',
+      'dosePerUnitLabel' => ({required Object unit}) => 'Dose per ${unit}',
       'editItem' => 'Edit item',
       'usedAmount' => 'Used amount',
       'deleteItem' => ({required Object name}) => 'Delete ${name}?',
@@ -1052,6 +1081,7 @@ extension on TranslationsEnGb {
       'deliveryFormSachet' => 'Sachet',
       'deliveryFormGram' => 'Tube',
       'unitMilligram' => 'mg',
+      'unitMicrogramPerDay' => 'µg/day',
       'unitPgPerMl' => 'pg/mL',
       'unitPmolPerL' => 'pmol/L',
       'unitNgPerDl' => 'ng/dL',

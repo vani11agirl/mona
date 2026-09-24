@@ -247,6 +247,10 @@ class TranslationsFr extends Translations
   String get updateDownloadFailed =>
       'Échec du téléchargement. Vérifiez votre connexion.';
   @override
+  String get secretSettings => 'Paramètres secrets';
+  @override
+  String get slimeMode => 'Mode slime';
+  @override
   String notificationMedicationReminderTitle({required Object scheduleName}) =>
       'Il est temps de prendre ${scheduleName}';
   @override
@@ -356,6 +360,18 @@ class TranslationsFr extends Translations
   @override
   String get estradiolLevelsTitle => 'Taux d\'estradiol';
   @override
+  String get week => 'S';
+  @override
+  String get twoWeeks => '2 S';
+  @override
+  String get threeMonths => '3 M';
+  @override
+  String get sixMonths => '6 M';
+  @override
+  String get month => 'M';
+  @override
+  String get year => 'A';
+  @override
   String get empty_blood_tests =>
       'Les prises de sang enregistrées s\'afficheront ici. Commencez avec le bouton Ajouter !';
   @override
@@ -394,8 +410,7 @@ class TranslationsFr extends Translations
   @override
   String get concentration => 'Concentration';
   @override
-  String concentrationLabelPerUnit({required Object unit}) =>
-      'Dose par ${unit}';
+  String dosePerUnitLabel({required Object unit}) => 'Dose par ${unit}';
   @override
   String get editItem => 'Modifier l\'élément';
   @override
@@ -542,6 +557,8 @@ class TranslationsFr extends Translations
   String get deliveryFormGram => 'Tube';
   @override
   String get unitMilligram => 'mg';
+  @override
+  String get unitMicrogramPerDay => 'µg/jour';
   @override
   String get unitPgPerMl => 'pg/mL';
   @override
@@ -943,6 +960,8 @@ extension on TranslationsFr {
           'Échec de l\'ouverture de l\'installateur : ${message}',
       'updateDownloadFailed' =>
         'Échec du téléchargement. Vérifiez votre connexion.',
+      'secretSettings' => 'Paramètres secrets',
+      'slimeMode' => 'Mode slime',
       'notificationMedicationReminderTitle' => (
               {required Object scheduleName}) =>
           'Il est temps de prendre ${scheduleName}',
@@ -1003,6 +1022,12 @@ extension on TranslationsFr {
         'Ajoutez une prise de sang ou enregistrez une injection d\'estradiol pour commencer',
       'bloodTestsTitle' => 'Prises de sang',
       'estradiolLevelsTitle' => 'Taux d\'estradiol',
+      'week' => 'S',
+      'twoWeeks' => '2 S',
+      'threeMonths' => '3 M',
+      'sixMonths' => '6 M',
+      'month' => 'M',
+      'year' => 'A',
       'empty_blood_tests' =>
         'Les prises de sang enregistrées s\'afficheront ici. Commencez avec le bouton Ajouter !',
       'addBloodTest' => 'Ajouter une analyse de sang',
@@ -1024,8 +1049,7 @@ extension on TranslationsFr {
       'adminRoute' => 'Voie d\'administration',
       'totalAmount' => 'Quantité totale',
       'concentration' => 'Concentration',
-      'concentrationLabelPerUnit' => ({required Object unit}) =>
-          'Dose par ${unit}',
+      'dosePerUnitLabel' => ({required Object unit}) => 'Dose par ${unit}',
       'editItem' => 'Modifier l\'élément',
       'usedAmount' => 'Quantité utilisée',
       'deleteItem' => ({required Object name}) => 'Supprimer ${name} ?',
@@ -1100,6 +1124,7 @@ extension on TranslationsFr {
       'deliveryFormSachet' => 'Sachet',
       'deliveryFormGram' => 'Tube',
       'unitMilligram' => 'mg',
+      'unitMicrogramPerDay' => 'µg/jour',
       'unitPgPerMl' => 'pg/mL',
       'unitPmolPerL' => 'pmol/L',
       'unitNgPerDl' => 'ng/dL',
