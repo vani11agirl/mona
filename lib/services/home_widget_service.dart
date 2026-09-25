@@ -4,6 +4,8 @@ import 'package:home_widget/home_widget.dart';
 import 'package:mona/controllers/next_intake_resolver.dart';
 import 'package:mona/controllers/slots_builder.dart';
 import 'package:mona/data/model/date.dart';
+import 'package:mona/data/model/intake_slot.dart';
+import 'package:mona/data/model/scheduling_strategy.dart';
 import 'package:mona/data/providers/medication_intake_provider.dart';
 import 'package:mona/data/providers/medication_schedule_provider.dart';
 import 'package:mona/distribution.dart';
@@ -39,19 +41,22 @@ class HomeWidgetService {
     SaveWidgetData? saveWidgetData,
     SetAppGroupId? setAppGroupId,
     UpdateWidget? updateWidget,
-  })  : _saveWidgetData = saveWidgetData ??
-            ((id, data) => HomeWidget.saveWidgetData<String>(id, data)),
-        _setAppGroupId = setAppGroupId ??
-            ((groupId) async {
-              await HomeWidget.setAppGroupId(groupId);
-            }),
-        _updateWidget = updateWidget ??
-            (({iOSName, qualifiedAndroidName}) async {
-              await HomeWidget.updateWidget(
-                iOSName: iOSName,
-                qualifiedAndroidName: qualifiedAndroidName,
-              );
-            });
+  }) : _saveWidgetData =
+           saveWidgetData ??
+           ((id, data) => HomeWidget.saveWidgetData<String>(id, data)),
+       _setAppGroupId =
+           setAppGroupId ??
+           ((groupId) async {
+             await HomeWidget.setAppGroupId(groupId);
+           }),
+       _updateWidget =
+           updateWidget ??
+           (({iOSName, qualifiedAndroidName}) async {
+             await HomeWidget.updateWidget(
+               iOSName: iOSName,
+               qualifiedAndroidName: qualifiedAndroidName,
+             );
+           });
 
   Future<void> sync(
     MedicationIntakeProvider medicationIntakeProvider,
@@ -63,19 +68,29 @@ class HomeWidgetService {
       return;
     }
     final isIOS = isIOSPlatform?.call() ?? false;
-    final nextIntake = isIOS
-        ? resolveNextIntake(
-            SlotsBuilder(medicationIntakeProvider, medicationScheduleProvider)
-                .intakeSlots(),
-            clock.now(),
-          )
-        : null;
+    final slots = isIOS
+        ? SlotsBuilder(
+            medicationIntakeProvider,
+            medicationScheduleProvider,
+          ).intakeSlots()
+        : <IntakeSlot>[];
+    final nextIntake = isIOS ? resolveNextIntake(slots, clock.now()) : null;
+    final today = Date.today();
+    final pendingTodayCount = slots
+        .where(
+          (slot) =>
+              slot.status != ScheduleStatus.taken &&
+              slot.status != ScheduleStatus.asNeeded &&
+              !slot.date.isAfter(today),
+        )
+        .length;
     await syncHrtTimeWidget(
       firstDate: medicationIntakeProvider.firstTakenLocalDate,
       locale: localeProvider.locale,
       intakeCount: medicationIntakeProvider.takenIntakes.length,
       recentIntakeCounts: _recentIntakeCounts(medicationIntakeProvider),
       nextIntake: nextIntake,
+      pendingTodayCount: pendingTodayCount,
     );
   }
 
@@ -97,6 +112,7 @@ class HomeWidgetService {
     required int intakeCount,
     required List<int> recentIntakeCounts,
     NextIntake? nextIntake,
+    int pendingTodayCount = 0,
   }) async {
     final supported = isPlatformSupported?.call() ?? isMobile;
     if (!supported) return;
@@ -117,13 +133,17 @@ class HomeWidgetService {
         nextIntake?.time == null
             ? null
             : nextIntake!.date
-                .toDateTimeAt(nextIntake.time!)
-                .millisecondsSinceEpoch
-                .toString(),
+                  .toDateTimeAt(nextIntake.time!)
+                  .millisecondsSinceEpoch
+                  .toString(),
       );
       await _saveWidgetData(
         'next_intake_interval_minutes',
         nextIntake?.interval.inMinutes.toString(),
+      );
+      await _saveWidgetData(
+        'next_intake_today_count',
+        nextIntake == null ? null : pendingTodayCount.toString(),
       );
     }
 
@@ -143,6 +163,6 @@ class HomeWidgetService {
   String? _dateString(Date? date) => date == null
       ? null
       : '${date.year.toString().padLeft(4, '0')}-'
-          '${date.month.toString().padLeft(2, '0')}-'
-          '${date.day.toString().padLeft(2, '0')}';
+            '${date.month.toString().padLeft(2, '0')}-'
+            '${date.day.toString().padLeft(2, '0')}';
 }
