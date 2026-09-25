@@ -12,9 +12,7 @@ void main() {
     final localeCount = sourceDirectory
         .listSync()
         .whereType<File>()
-        .where(
-          (file) => file.path.endsWith('.i18next.json'),
-        )
+        .where((file) => file.path.endsWith('.i18next.json'))
         .length;
 
     // Act
@@ -26,7 +24,7 @@ void main() {
       expect(words.keys, containsAll(widgetKeys));
       expect(words.values, everyElement(isNotEmpty));
       expect(words['iosWidgetFuture'], contains('{{duration}}'));
-      expect(words['iosWidgetPast'], contains('{{duration}}'));
+      expect(words['iosWidgetCountToday'], contains('{{count}}'));
     }
   });
 
@@ -46,9 +44,10 @@ void main() {
       translations['tok']!['iosWidgetNextIntake'],
       translations['en']!['iosWidgetNextIntake'],
     );
+    expect(translations['fr']!['iosWidgetFuture'], contains('{{duration}}'));
     expect(
-      translations['fr']!['iosWidgetFuture'],
-      contains('{{duration}}'),
+      translations['fr']!['iosWidgetCountToday'],
+      translations['en']!['iosWidgetCountToday'],
     );
   });
 

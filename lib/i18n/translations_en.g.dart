@@ -882,6 +882,12 @@ class Translations with BaseTranslations<AppLocale, Translations> {
   /// en: 'Next intake'
   String get iosWidgetNextIntake => 'Next intake';
 
+  /// en: 'Intakes due'
+  String get iosWidgetIntakesDue => 'Intakes due';
+
+  /// en: '{count} today'
+  String iosWidgetCountToday({required Object count}) => '${count} today';
+
   /// en: 'Intake due'
   String get iosWidgetIntakeDue => 'Intake due';
 
@@ -1411,6 +1417,8 @@ extension on Translations {
       'invalidTotalAmount' => 'Invalid total amount',
       'cannotExceedTotalCapacity' => 'Cannot exceed total capacity',
       'iosWidgetNextIntake' => 'Next intake',
+      'iosWidgetIntakesDue' => 'Intakes due',
+      'iosWidgetCountToday' => ({required Object count}) => '${count} today',
       'iosWidgetIntakeDue' => 'Intake due',
       'iosWidgetDue' => 'Due',
       'iosWidgetLate' => 'Late',

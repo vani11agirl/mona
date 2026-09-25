@@ -10,14 +10,11 @@ const widgetKeys = [
   'HrtCounterDescription',
   'neverTakenYet',
   'iosWidgetNextIntake',
-  'iosWidgetIntakeDue',
-  'iosWidgetDue',
-  'iosWidgetLate',
+  'iosWidgetIntakesDue',
+  'iosWidgetCountToday',
   'iosWidgetNoPlan',
   'iosWidgetNoSchedule',
-  'iosWidgetNow',
   'iosWidgetFuture',
-  'iosWidgetPast',
 ];
 
 void main() {
@@ -26,7 +23,8 @@ void main() {
     '${const JsonEncoder.withIndent('  ').convert(translations)}\n',
   );
   stdout.writeln(
-      'Generated iOS widget copy for ${translations.length} locale(s).');
+    'Generated iOS widget copy for ${translations.length} locale(s).',
+  );
 }
 
 Map<String, Map<String, String>> buildIosWidgetTranslations(
@@ -53,9 +51,11 @@ Map<String, Map<String, String>> buildIosWidgetTranslations(
       if (value is! String || value.isEmpty) {
         throw StateError('Missing widget translation for $key in $locale');
       }
-      if ((key == 'iosWidgetFuture' || key == 'iosWidgetPast') &&
-          !value.contains('{{duration}}')) {
+      if (key == 'iosWidgetFuture' && !value.contains('{{duration}}')) {
         throw StateError('Missing duration placeholder for $key in $locale');
+      }
+      if (key == 'iosWidgetCountToday' && !value.contains('{{count}}')) {
+        throw StateError('Missing count placeholder for $key in $locale');
       }
       strings[key] = value;
     }

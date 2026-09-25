@@ -316,6 +316,8 @@
   "invalidTotalAmount": "Invalid total amount",
   "cannotExceedTotalCapacity": "Cannot exceed total capacity",
   "iosWidgetNextIntake": "Next intake",
+  "iosWidgetIntakesDue": "Intakes due",
+  "iosWidgetCountToday": "{{count}} today",
   "iosWidgetIntakeDue": "Intake due",
   "iosWidgetDue": "Due",
   "iosWidgetLate": "Late",

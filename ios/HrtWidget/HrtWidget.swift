@@ -50,8 +50,7 @@ fileprivate struct NextIntakeSnapshot {
                 : -Int(ceil(-seconds / 60))
             return NextIntakeCountdown(
                 remainingMinutes: minutes,
-                intervalMinutes: intervalMinutes,
-                dateOnly: false
+                intervalMinutes: intervalMinutes
             )
         }
 
@@ -65,8 +64,7 @@ fileprivate struct NextIntakeSnapshot {
         let days = calendar.dateComponents([.day], from: logicalToday, to: dueDay).day ?? 0
         return NextIntakeCountdown(
             remainingMinutes: days * 24 * 60,
-            intervalMinutes: intervalMinutes,
-            dateOnly: true
+            intervalMinutes: intervalMinutes
         )
     }
 }
@@ -74,7 +72,6 @@ fileprivate struct NextIntakeSnapshot {
 private struct NextIntakeCountdown {
     let remainingMinutes: Int
     let intervalMinutes: Int
-    let dateOnly: Bool
 
     var display: (value: Int, unit: Unit) {
         let minutes = abs(remainingMinutes)
@@ -92,31 +89,24 @@ private struct NextIntakeCountdown {
         return (minutes / (24 * 60), .days)
     }
 
-    func rectangularText(copy: WidgetCopy) -> String {
-        if remainingMinutes == 0 {
-            return dateOnly ? copy.today : copy.now
+    func rectangularText(copy: WidgetCopy, pendingTodayCount: Int) -> String {
+        if remainingMinutes <= 0 {
+            return copy.countToday(max(1, pendingTodayCount))
         }
-        if abs(remainingMinutes) >= 24 * 60 {
-            let signedValue = remainingMinutes < 0 ? -display.value : display.value
-            return copy.relative(display.unit.components(value: signedValue), abbreviated: false)
+        if remainingMinutes >= 24 * 60 {
+            return copy.relative(display.unit.components(value: display.value), abbreviated: false)
         }
-        let duration = shortDuration(copy: copy)
-        return remainingMinutes < 0 ? copy.past(duration) : copy.future(duration)
+        return copy.future(shortDuration(copy: copy))
     }
 
-    func accessibilityLabel(copy: WidgetCopy) -> String {
-        if remainingMinutes == 0 {
-            return "\(copy.intakeDue), \(dateOnly ? copy.today : copy.now)"
+    func accessibilityLabel(copy: WidgetCopy, pendingTodayCount: Int) -> String {
+        if remainingMinutes <= 0 {
+            return "\(copy.intakesDue), \(copy.countToday(max(1, pendingTodayCount)))"
         }
-        let time: String
-        if abs(remainingMinutes) >= 24 * 60 {
-            let signedValue = remainingMinutes < 0 ? -display.value : display.value
-            time = copy.relative(display.unit.components(value: signedValue), abbreviated: false)
-        } else {
-            let duration = spokenDuration(copy: copy)
-            time = remainingMinutes < 0 ? copy.past(duration) : copy.future(duration)
-        }
-        return "\(remainingMinutes < 0 ? copy.intakeDue : copy.nextIntake), \(time)"
+        let time = remainingMinutes >= 24 * 60
+            ? copy.relative(display.unit.components(value: display.value), abbreviated: false)
+            : copy.future(spokenDuration(copy: copy))
+        return "\(copy.nextIntake), \(time)"
     }
 
     private func shortDuration(copy: WidgetCopy) -> String {
@@ -237,6 +227,7 @@ struct HrtWidgetEntry: TimelineEntry {
     let hasHrtData: Bool
     let recentIntakeCounts: [Int]
     fileprivate let nextIntake: NextIntakeSnapshot?
+    let pendingTodayCount: Int
     let localeIdentifier: String
     let homeTitle: String
     let homeIntakeText: String
@@ -340,6 +331,7 @@ struct HrtWidgetProvider: TimelineProvider {
             hasHrtData: duration != nil,
             recentIntakeCounts: normalizedRecentCounts,
             nextIntake: nextIntake,
+            pendingTodayCount: max(0, Int(defaults?.string(forKey: "next_intake_today_count") ?? "") ?? 0),
             localeIdentifier: localeIdentifier,
             homeTitle: defaults?.string(forKey: "widget_home_title") ?? copy.homeTitle,
             homeIntakeText: defaults?.string(forKey: "widget_home_intakes")
@@ -591,7 +583,7 @@ struct HrtWidgetEntryView: View {
 
     private var accessoryTitle: String {
         guard let countdown else { return entry.copy.nextIntake.uppercased(with: entry.copy.locale) }
-        let title = countdown.remainingMinutes <= 0 ? entry.copy.intakeDue : entry.copy.nextIntake
+        let title = countdown.remainingMinutes <= 0 ? entry.copy.intakesDue : entry.copy.nextIntake
         return title.uppercased(with: entry.copy.locale)
     }
 
@@ -607,39 +599,31 @@ struct HrtWidgetEntryView: View {
                     Text(entry.copy.nextIntake)
                 } currentValueLabel: {
                     VStack(spacing: -3) {
-                        if countdown.remainingMinutes == 0 {
-                            Text(entry.copy.due.uppercased(with: entry.copy.locale))
-                                .font(.system(size: 17, weight: .semibold, design: .rounded))
+                        if countdown.remainingMinutes <= 0 {
+                            Image(systemName: "clock")
+                                .font(.system(size: 25, weight: .medium))
                         } else {
-                            Text(countdown.remainingMinutes < 0
-                                ? entry.copy.duration(
-                                    countdown.display.unit.components(value: countdown.display.value),
-                                    units: countdown.display.unit.calendarUnit,
-                                    abbreviated: true
-                                )
-                                : "\(countdown.display.value)")
+                            Text("\(countdown.display.value)")
                                 .font(.system(size: 25, weight: .medium, design: .rounded))
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.7)
+                            Text(entry.copy.circularUnit(
+                                countdown.display.unit.components(value: countdown.display.value),
+                                units: countdown.display.unit.calendarUnit
+                            ))
+                                .font(.system(size: 10, weight: .medium, design: .rounded))
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
                         }
-                        Text(countdown.remainingMinutes < 0
-                            ? entry.copy.late.uppercased(with: entry.copy.locale)
-                            : countdown.remainingMinutes == 0
-                                ? (countdown.dateOnly ? entry.copy.today : entry.copy.now)
-                                    .uppercased(with: entry.copy.locale)
-                                : entry.copy.circularUnit(
-                                    countdown.display.unit.components(value: countdown.display.value),
-                                    units: countdown.display.unit.calendarUnit
-                                ))
-                            .font(.system(size: 10, weight: .medium, design: .rounded))
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.8)
                     }
                 }
                 .gaugeStyle(.accessoryCircularCapacity)
                 .widgetAccentable()
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel(countdown.accessibilityLabel(copy: entry.copy))
+                .accessibilityLabel(countdown.accessibilityLabel(
+                    copy: entry.copy,
+                    pendingTodayCount: entry.pendingTodayCount
+                ))
             } else {
                 Gauge(value: 0, in: 0...1) {
                     Text(entry.copy.nextIntake)
@@ -660,7 +644,10 @@ struct HrtWidgetEntryView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(accessoryTitle)
                     .font(.caption2.weight(.semibold))
-                Text(countdown?.rectangularText(copy: entry.copy) ?? entry.copy.noSchedule)
+                Text(countdown?.rectangularText(
+                    copy: entry.copy,
+                    pendingTodayCount: entry.pendingTodayCount
+                ) ?? entry.copy.noSchedule)
                     .font(.system(size: 21, weight: .semibold, design: .rounded))
                     .lineLimit(1)
                     .minimumScaleFactor(0.75)
@@ -669,7 +656,10 @@ struct HrtWidgetEntryView: View {
             .padding(.leading, 8)
             .widgetAccentable()
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel(countdown?.accessibilityLabel(copy: entry.copy)
+            .accessibilityLabel(countdown?.accessibilityLabel(
+                copy: entry.copy,
+                pendingTodayCount: entry.pendingTodayCount
+            )
                 ?? entry.copy.noSchedule)
         } else {
             EmptyView()

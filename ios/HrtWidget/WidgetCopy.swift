@@ -18,12 +18,9 @@ struct WidgetCopy {
     }
 
     var nextIntake: String { text("iosWidgetNextIntake") }
-    var intakeDue: String { text("iosWidgetIntakeDue") }
-    var due: String { text("iosWidgetDue") }
-    var late: String { text("iosWidgetLate") }
+    var intakesDue: String { text("iosWidgetIntakesDue") }
     var noPlan: String { text("iosWidgetNoPlan") }
     var noSchedule: String { text("iosWidgetNoSchedule") }
-    var now: String { text("iosWidgetNow") }
     var homeTitle: String { text("HrtCounter") }
     var homeEmpty: String { text("neverTakenYet") }
     var pickerDescription: String { text("HrtCounterDescription") }
@@ -32,8 +29,8 @@ struct WidgetCopy {
         text("iosWidgetFuture").replacingOccurrences(of: "{{duration}}", with: duration)
     }
 
-    func past(_ duration: String) -> String {
-        text("iosWidgetPast").replacingOccurrences(of: "{{duration}}", with: duration)
+    func countToday(_ count: Int) -> String {
+        text("iosWidgetCountToday").replacingOccurrences(of: "{{count}}", with: String(count))
     }
 
     func duration(_ components: DateComponents, units: NSCalendar.Unit, abbreviated: Bool) -> String {
@@ -59,14 +56,6 @@ struct WidgetCopy {
         formatter.locale = locale
         formatter.unitsStyle = abbreviated ? .abbreviated : .full
         return formatter.localizedString(from: components)
-    }
-
-    var today: String {
-        let formatter = DateFormatter()
-        formatter.locale = locale
-        formatter.dateStyle = .medium
-        formatter.doesRelativeDateFormatting = true
-        return formatter.string(from: Date())
     }
 
     func circularUnit(_ components: DateComponents, units: NSCalendar.Unit) -> String {
