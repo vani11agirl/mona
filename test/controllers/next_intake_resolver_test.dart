@@ -142,6 +142,11 @@ void main() {
       strategy: aWeeklyStrategy(daysOfWeek: const [1, 4]),
       days: 3
     ),
+    (
+      name: 'single-day weekly',
+      strategy: aWeeklyStrategy(daysOfWeek: const [1]),
+      days: 7
+    ),
   ]) {
     test('completed ${entry.name} intake advances only once', () {
       // Arrange
