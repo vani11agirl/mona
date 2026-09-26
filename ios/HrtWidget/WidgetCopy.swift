@@ -54,6 +54,7 @@ struct WidgetCopy {
     func relative(_ components: DateComponents, abbreviated: Bool) -> String {
         let formatter = RelativeDateTimeFormatter()
         formatter.locale = locale
+        formatter.calendar = Calendar(identifier: .gregorian)
         formatter.unitsStyle = abbreviated ? .abbreviated : .full
         return formatter.localizedString(from: components)
     }

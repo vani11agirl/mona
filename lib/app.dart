@@ -71,6 +71,7 @@ class _MonaAppState extends State<MonaApp> with WidgetsBindingObserver {
       _medicationIntakeProvider.addListener(_regenerateHomeWidget);
       if (isIOS) {
         _medicationScheduleProvider.addListener(_regenerateHomeWidget);
+        _preferencesService.addListener(_regenerateHomeWidget);
       }
       _localeProvider.addListener(_regenerateHomeWidget);
       _regenerateHomeWidget();
@@ -88,6 +89,7 @@ class _MonaAppState extends State<MonaApp> with WidgetsBindingObserver {
       _medicationIntakeProvider.removeListener(_regenerateHomeWidget);
       if (isIOS) {
         _medicationScheduleProvider.removeListener(_regenerateHomeWidget);
+        _preferencesService.removeListener(_regenerateHomeWidget);
       }
       _localeProvider.removeListener(_regenerateHomeWidget);
     }

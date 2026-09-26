@@ -138,6 +138,37 @@ void main() {
       expect(appGroups, ['group.com.deliacheminot.mona']);
     });
 
+    test('shares the configured day start and republishes changes', () async {
+      // Arrange
+      HomeWidgetService.isIOSPlatform = () => true;
+      final previousDayStart = logicalDayStartMinutes;
+      addTearDown(() => logicalDayStartMinutes = previousDayStart);
+      final service = makeService();
+      final snapshots = <Map<String, dynamic>>[];
+
+      // Act
+      await withClock(Clock.fixed(DateTime(2026, 6, 1, 12)), () async {
+        for (final minutes in [390, 0]) {
+          logicalDayStartMinutes = minutes;
+          await service.sync(intakeProvider, scheduleProvider, localeProvider);
+          snapshots.add(snapshot());
+        }
+      });
+
+      // Assert
+      expect(
+          snapshots.map((data) => data['logical_day_start_minutes']), [390, 0]);
+      expect(
+        snapshots
+            .map((data) => (data['intake_timeline'] as List).first['from_ms']),
+        [
+          DateTime(2026, 6, 1, 6, 30).millisecondsSinceEpoch.toString(),
+          DateTime(2026, 6, 1).millisecondsSinceEpoch.toString(),
+        ],
+      );
+      expect(updated, hasLength(2));
+    });
+
     test(
       'shares translated Home Screen copy for the real intake count',
       () async {
@@ -245,7 +276,7 @@ void main() {
       // Assert
       expect(stateAt(DateTime(2026, 6, 1, 12))['next_intake_today_count'], '3');
       expect(stateAt(DateTime(2026, 6, 2, 4))['next_intake_today_count'], '4');
-      expect(operations, ['save:widget_snapshot_v1', 'update']);
+      expect(operations, ['save:widget_snapshot', 'update']);
       expect(snapshot()['hrt_first_date'], '2026-01-05');
       expect(snapshot()['app_locale'], 'fr');
       expect(snapshot()['hrt_intake_count'], '3');

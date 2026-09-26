@@ -6,14 +6,35 @@ private let widgetKind = "HrtWidget"
 private let appGroupID = Bundle.main.object(forInfoDictionaryKey: "MonaWidgetAppGroup") as? String
     ?? "group.com.deliacheminot.mona"
 
-private func sharedWidgetData() -> [String: Any] {
-    guard let defaults = UserDefaults(suiteName: appGroupID) else { return [:] }
-    // Read one published value, never a mixture of fields from two app syncs.
-    // Retain pre-upgrade data until the app publishes its first snapshot.
-    guard let encoded = defaults.string(forKey: "widget_snapshot_v1") else {
-        return defaults.dictionaryRepresentation()
+// Stored date components use Dart's Gregorian calendar, regardless of the
+// user's preferred calendar. Logical days still follow the local time zone.
+private var widgetCalendar: Calendar {
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.timeZone = .current
+    return calendar
+}
+
+private func dayStartMinutes(in data: [String: Any]) -> Int? {
+    guard let minutes = data["logical_day_start_minutes"] as? Int,
+          (0..<1440).contains(minutes) else { return nil }
+    return minutes
+}
+
+private func logicalDay(at date: Date, startingAt minutes: Int) -> Date {
+    let calendar = widgetCalendar
+    let today = calendar.startOfDay(for: date)
+    let time = calendar.dateComponents([.hour, .minute], from: date)
+    if (time.hour ?? 0) * 60 + (time.minute ?? 0) < minutes {
+        return calendar.date(byAdding: .day, value: -1, to: today) ?? today
     }
-    guard let bytes = encoded.data(using: .utf8),
+    return today
+}
+
+private func sharedWidgetData() -> [String: Any] {
+    // Read one published value, never a mixture of fields from two app syncs.
+    guard let defaults = UserDefaults(suiteName: appGroupID),
+          let encoded = defaults.string(forKey: "widget_snapshot"),
+          let bytes = encoded.data(using: .utf8),
           let data = try? JSONSerialization.jsonObject(with: bytes) as? [String: Any]
     else { return [:] }
     return data
@@ -27,7 +48,7 @@ private func widgetInstant(_ value: Any?) -> Date? {
 
 private func intakeData(at date: Date, in data: [String: Any]) -> (values: [String: Any], expired: Bool) {
     guard let timeline = data["intake_timeline"] as? [[String: Any]] else {
-        return (data, false)
+        return ([:], false)
     }
     guard let end = widgetInstant(data["intake_timeline_end_ms"]),
           let current = timeline.last(where: {
@@ -36,7 +57,7 @@ private func intakeData(at date: Date, in data: [String: Any]) -> (values: [Stri
           }) else {
         return ([:], true)
     }
-    if date >= end, let next = NextIntakeSnapshot(data: current),
+    if date >= end, let next = NextIntakeSnapshot(data: current, dayStart: dayStartMinutes(in: data)),
        next.countdown(at: date).remainingMinutes <= 0 {
         // "Today" totals have expired. A known intake still in the future can
         // keep counting down (e.g. a monthly schedule), but must not reuse an
@@ -46,7 +67,8 @@ private func intakeData(at date: Date, in data: [String: Any]) -> (values: [Stri
     return (current, false)
 }
 
-private func widgetDay(_ raw: String, calendar: Calendar = .current) -> Date? {
+private func widgetDay(_ raw: String) -> Date? {
+    let calendar = widgetCalendar
     let parts = raw.split(separator: "-")
     guard parts.count == 3,
           let year = Int(parts[0]), let month = Int(parts[1]), let day = Int(parts[2]),
@@ -62,9 +84,11 @@ fileprivate struct NextIntakeSnapshot {
     let dueDay: Date
     let dueAt: Date?
     let intervalMinutes: Int
+    let dayStart: Int
 
-    init?(data: [String: Any]) {
-        guard let dateString = data["next_intake_date"] as? String,
+    init?(data: [String: Any], dayStart: Int?) {
+        guard let dayStart,
+              let dateString = data["next_intake_date"] as? String,
               let intervalString = data["next_intake_interval_minutes"] as? String,
               let intervalMinutes = Int(intervalString), intervalMinutes > 0
         else {
@@ -74,9 +98,10 @@ fileprivate struct NextIntakeSnapshot {
             return nil
         }
 
-        self.dueDay = Calendar.current.startOfDay(for: parsedDay)
+        self.dueDay = parsedDay
         self.intervalMinutes = intervalMinutes
         self.dueAt = widgetInstant(data["next_intake_due_at_ms"])
+        self.dayStart = dayStart
     }
 
     func countdown(at now: Date) -> NextIntakeCountdown {
@@ -87,18 +112,13 @@ fileprivate struct NextIntakeSnapshot {
                 : -Int(ceil(-seconds / 60))
             return NextIntakeCountdown(
                 remainingMinutes: minutes,
-                remainingMonths: Calendar.current.dateComponents([.month], from: now, to: dueAt).month ?? 0,
+                remainingMonths: widgetCalendar.dateComponents([.month], from: now, to: dueAt).month ?? 0,
                 intervalMinutes: intervalMinutes
             )
         }
 
-        let calendar = Calendar.current
-        var logicalToday = calendar.startOfDay(for: now)
-        let time = calendar.dateComponents([.hour, .minute], from: now)
-        if (time.hour ?? 0) * 60 + (time.minute ?? 0) < 240 {
-            logicalToday = calendar.date(byAdding: .day, value: -1, to: logicalToday)
-                ?? logicalToday
-        }
+        let calendar = widgetCalendar
+        let logicalToday = logicalDay(at: now, startingAt: dayStart)
         let days = calendar.dateComponents([.day], from: logicalToday, to: dueDay).day ?? 0
         return NextIntakeCountdown(
             remainingMinutes: days * 24 * 60,
@@ -229,21 +249,20 @@ fileprivate enum HrtDurationUnit: String {
 
 private struct HrtDurationSnapshot {
     let firstDay: Date
+    let dayStart: Int
 
     init?(data: [String: Any]) {
         guard let raw = data["hrt_first_date"] as? String,
-              let day = widgetDay(raw)
+              let day = widgetDay(raw),
+              let dayStart = dayStartMinutes(in: data)
         else { return nil }
         firstDay = day
+        self.dayStart = dayStart
     }
 
     func duration(at now: Date) -> (value: Int, unit: HrtDurationUnit) {
-        let calendar = Calendar.current
-        var today = calendar.startOfDay(for: now)
-        let time = calendar.dateComponents([.hour, .minute], from: now)
-        if (time.hour ?? 0) * 60 + (time.minute ?? 0) < 240 {
-            today = calendar.date(byAdding: .day, value: -1, to: today) ?? today
-        }
+        let calendar = widgetCalendar
+        let today = logicalDay(at: now, startingAt: dayStart)
 
         let days = max(0, calendar.dateComponents([.day], from: firstDay, to: today).day ?? 0)
         if days < 7 { return (max(days, 1), .days) }
@@ -262,7 +281,6 @@ struct HrtWidgetEntry: TimelineEntry {
     let date: Date
     let durationValue: Int
     fileprivate let durationUnit: HrtDurationUnit
-    let showsIntakes: Bool
     let hasHrtData: Bool
     fileprivate let nextIntake: NextIntakeSnapshot?
     let pendingTodayCount: Int
@@ -308,25 +326,30 @@ struct HrtWidgetProvider: TimelineProvider {
         let entries = timelineDates(from: now, data: data).map {
             entry(at: $0, data: data)
         }
-        completion(Timeline(entries: entries, policy: .atEnd))
+        // Without an app snapshot, wait for the app to publish and reload us.
+        let policy: TimelineReloadPolicy = dayStartMinutes(in: data) == nil ? .never : .atEnd
+        completion(Timeline(entries: entries, policy: policy))
     }
 
     private func timelineDates(from now: Date, data: [String: Any]) -> [Date] {
-        let calendar = Calendar.current
+        guard let dayStart = dayStartMinutes(in: data) else { return [now] }
+        let calendar = widgetCalendar
         let horizon = calendar.date(byAdding: .day, value: 7, to: now)
             ?? now.addingTimeInterval(7 * 24 * 60 * 60)
         var dates: Set<Date> = [now]
 
-        // Mona's logical day starts at 04:00; refresh HRT duration even if
+        // Refresh at the user's logical day boundary even if
         // the app has not been opened and no next intake is scheduled.
+        let boundaryTime = DateComponents(hour: dayStart / 60, minute: dayStart % 60, second: 0)
         if var boundary = calendar.nextDate(
             after: now,
-            matching: DateComponents(hour: 4, minute: 0, second: 0),
+            matching: boundaryTime,
             matchingPolicy: .nextTime
         ) {
             while boundary <= horizon {
                 dates.insert(boundary)
-                boundary = calendar.date(byAdding: .day, value: 1, to: boundary) ?? horizon.addingTimeInterval(1)
+                boundary = calendar.nextDate(after: boundary, matching: boundaryTime, matchingPolicy: .nextTime)
+                    ?? horizon.addingTimeInterval(1)
             }
         }
 
@@ -344,12 +367,13 @@ struct HrtWidgetProvider: TimelineProvider {
             dates.insert(end)
         }
 
-        // Each segment uses its own selected intake, including after 04:00.
+        // Each segment uses its own selected intake, including after day changes.
         // Include exact schedule transitions independently of countdown steps.
         let boundaries = dates.union([horizon]).sorted()
         for (start, end) in zip(boundaries, boundaries.dropFirst()) {
             let state = intakeData(at: start, in: data)
-            guard let dueAt = NextIntakeSnapshot(data: state.values)?.dueAt, dueAt > start else { continue }
+            guard let dueAt = NextIntakeSnapshot(data: state.values, dayStart: dayStart)?.dueAt,
+                  dueAt > start else { continue }
             var cursor = start
             while cursor < min(end, dueAt) {
                 let distance = abs(dueAt.timeIntervalSince(cursor))
@@ -372,9 +396,8 @@ struct HrtWidgetProvider: TimelineProvider {
             date: date,
             durationValue: duration?.value ?? 0,
             durationUnit: duration?.unit ?? .days,
-            showsIntakes: duration != nil,
             hasHrtData: duration != nil,
-            nextIntake: NextIntakeSnapshot(data: state.values),
+            nextIntake: NextIntakeSnapshot(data: state.values, dayStart: dayStartMinutes(in: data)),
             pendingTodayCount: max(0, Int(state.values["next_intake_today_count"] as? String ?? "") ?? 0),
             intakeTimelineExpired: state.expired,
             localeIdentifier: localeIdentifier,
@@ -424,7 +447,7 @@ struct HrtWidgetEntryView: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.52)
 
-            if entry.showsIntakes && !entry.intakeText.isEmpty {
+            if entry.hasHrtData && !entry.intakeText.isEmpty {
                 Text(entry.intakeText)
                     .font(.caption)
                     .foregroundColor(.secondary)
@@ -450,7 +473,7 @@ struct HrtWidgetEntryView: View {
     private var accessibilitySummary: String {
         guard entry.hasHrtData else { return "\(entry.homeTitle), \(entry.homeEmptyText)." }
         var summary = "\(entry.homeTitle), \(entry.durationText)."
-        if entry.showsIntakes && !entry.intakeText.isEmpty {
+        if !entry.intakeText.isEmpty {
             summary += " \(entry.intakeText)."
         }
         return summary

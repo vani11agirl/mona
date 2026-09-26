@@ -87,6 +87,7 @@ class HomeWidgetService {
     if (isIOS) {
       final strings = AppLocaleUtils.parse(locale).buildSync();
       data.addAll({
+        'logical_day_start_minutes': logicalDayStartMinutes,
         'widget_home_title': strings.HrtCounter,
         'widget_home_intakes': strings.intakesLoggedCount(count: intakeCount),
         'widget_home_empty': strings.neverTakenYet,
@@ -113,7 +114,7 @@ class HomeWidgetService {
 
     // Reuse the app's scheduling rules for today and the next seven days.
     // Predictions assume no further intakes are recorded; any edit republishes
-    // the timeline. Calendar construction preserves the 04:00 boundary at DST.
+    // the timeline. Construct each boundary at the configured local time.
     for (var day = 0; day <= 7; day++) {
       final start = boundary(day);
       final end = boundary(day + 1);
@@ -174,7 +175,7 @@ class HomeWidgetService {
       // caller changes back to the last successfully published value.
       _lastPublishedData = null;
       await _setAppGroupId(appGroupId);
-      await _saveWidgetData('widget_snapshot_v1', encoded);
+      await _saveWidgetData('widget_snapshot', encoded);
       await _updateWidget(iOSName: _iOSName);
       _lastPublishedData = encoded;
     });

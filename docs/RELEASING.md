@@ -118,6 +118,6 @@ and sign both targets with matching `com.apple.security.application-groups`
 entitlements and profiles. Check the final signatures, not just the source
 entitlements. Edit staged bundle metadata before signing, never afterward.
 
-Ordinary builds default to `group.com.deliacheminot.mona` on both sides. A group
-change does not migrate old widget snapshots: open Mona once after installing to
-publish its existing app data into the new shared container.
+Ordinary builds default to `group.com.deliacheminot.mona` on both sides. Open Mona
+once after installing a re-signed build to publish its app data into the shared
+container.
