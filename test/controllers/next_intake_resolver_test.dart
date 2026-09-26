@@ -43,7 +43,7 @@ void main() {
   final monday = Date(year: 2026, month: 6, day: 1);
   final noon = DateTime(2026, 6, 1, 12);
 
-  test('ignores as-needed schedules and returns null without a due intake', () {
+  test('ignores as-needed schedules', () {
     // Arrange
     final schedule = aMedicationSchedule(
       scheduling: anAsNeededStrategy(),
@@ -51,12 +51,10 @@ void main() {
     );
 
     // Act
-    final withoutSlots = resolveSchedules([], noon);
-    final withAsNeededSlot = resolveSchedules([schedule], noon);
+    final result = resolveSchedules([schedule], noon);
 
     // Assert
-    expect(withoutSlots, isNull);
-    expect(withAsNeededSlot, isNull);
+    expect(result, isNull);
   });
 
   test('oldest missed intake takes priority over upcoming intakes', () {

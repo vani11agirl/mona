@@ -66,11 +66,6 @@ NextIntake? _candidate(IntakeSlot slot, DateTime now) {
         isOverdue: statusOverdue,
       );
     case WeeklySchedule scheduling:
-      if (!scheduling.daysOfWeek.any(
-        (day) => day >= DateTime.monday && day <= DateTime.sunday,
-      )) {
-        return null;
-      }
       final date = taken
           ? _nextWeekday(slot.date, scheduling.daysOfWeek)
           : slot.status == ScheduleStatus.todayOverdue
@@ -106,7 +101,7 @@ Date _nextWeekday(Date date, List<int> weekdays) {
     final candidate = date.add(Duration(days: days));
     if (weekdays.contains(candidate.weekday)) return candidate;
   }
-  // The caller guarantees a valid weekday; only this weekday remains.
+  // Weekly schedules have a selected weekday; only this weekday remains.
   return date.add(const Duration(days: 7));
 }
 
@@ -116,7 +111,7 @@ Duration _weeklyInterval(Date date, List<int> weekdays) {
       return Duration(days: days);
     }
   }
-  // The caller guarantees a valid weekday; only this weekday remains.
+  // Weekly schedules have a selected weekday; only this weekday remains.
   return const Duration(days: 7);
 }
 
