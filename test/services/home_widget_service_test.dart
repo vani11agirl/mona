@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -10,12 +12,14 @@ import '../mocks/mocks.mocks.dart';
 
 void main() {
   test('recognizes only Mona Home widget links', () {
-    expect(
-      HomeWidgetService.isHomeWidgetUrl(
-        Uri.parse('mona-widget://home?homeWidget=true'),
-      ),
-      isTrue,
-    );
+    // Arrange
+    final home = Uri.parse('mona-widget://home?homeWidget=true');
+
+    // Act
+    final recognized = HomeWidgetService.isHomeWidgetUrl(home);
+
+    // Assert
+    expect(recognized, isTrue);
     expect(HomeWidgetService.isHomeWidgetUrl(null), isFalse);
     expect(
       HomeWidgetService.isHomeWidgetUrl(Uri.parse('mona-widget://home')),
@@ -37,6 +41,15 @@ void main() {
     late MockMedicationScheduleProvider scheduleProvider;
     late MockLocaleProvider localeProvider;
 
+    Map<String, dynamic> snapshot() =>
+        jsonDecode(saved.last['data']!) as Map<String, dynamic>;
+
+    Map<String, dynamic> stateAt(DateTime at) => (snapshot()['intake_timeline']
+            as List)
+        .cast<Map<String, dynamic>>()
+        .lastWhere((state) =>
+            int.parse(state['from_ms'] as String) <= at.millisecondsSinceEpoch);
+
     setUp(() {
       saved = [];
       appGroups = [];
@@ -49,6 +62,11 @@ void main() {
       when(intakeProvider.isLoading).thenReturn(false);
       when(scheduleProvider.isLoading).thenReturn(false);
       when(scheduleProvider.schedules).thenReturn([]);
+      when(intakeProvider.getTakenIntakesForScheduleOn(any, any))
+          .thenReturn([]);
+      when(intakeProvider.getLastIntakeLocalDateForSchedule(any))
+          .thenReturn(null);
+      when(intakeProvider.getLastTakenIntakeForSchedule(any)).thenReturn(null);
       when(intakeProvider.firstTakenLocalDate)
           .thenReturn(Date(year: 2026, month: 1, day: 5));
       when(intakeProvider.takenIntakes)
@@ -162,6 +180,7 @@ void main() {
     test(
       'shares translated Home Screen copy for the real intake count',
       () async {
+        // Arrange
         HomeWidgetService.isIOSPlatform = () => true;
         final service = HomeWidgetService(
           saveWidgetData: (id, data) async =>
@@ -173,36 +192,18 @@ void main() {
           )),
         );
 
+        // Act
         await service.sync(intakeProvider, scheduleProvider, localeProvider);
 
-        expect(
-          saved,
-          contains(
-            equals({'id': 'widget_home_title', 'data': 'Temps sous THS'}),
-          ),
-        );
-        expect(
-          saved,
-          contains(
-            equals({
-              'id': 'widget_home_intakes',
-              'data': '3 prises enregistrées',
-            }),
-          ),
-        );
-        expect(
-          saved,
-          contains(
-            equals({
-              'id': 'widget_home_empty',
-              'data': 'Jamais pris auparavant',
-            }),
-          ),
-        );
+        // Assert
+        expect(snapshot()['widget_home_title'], 'Temps sous THS');
+        expect(snapshot()['widget_home_intakes'], '3 prises enregistrées');
+        expect(snapshot()['widget_home_empty'], 'Jamais pris auparavant');
       },
     );
 
     test('shares an exact due instant for a timed daily intake', () async {
+      // Arrange
       HomeWidgetService.isIOSPlatform = () => true;
       final date = Date(year: 2026, month: 6, day: 1);
       final schedule = aMedicationSchedule(
@@ -223,30 +224,20 @@ void main() {
         )),
       );
 
+      // Act
       await withClock(
         Clock.fixed(DateTime(2026, 6, 1, 12)),
         () => service.sync(intakeProvider, scheduleProvider, localeProvider),
       );
 
+      // Assert
+      final state = stateAt(DateTime(2026, 6, 1, 12));
+      expect(state['next_intake_date'], '2026-06-01');
       expect(
-        saved,
-        contains(equals({'id': 'next_intake_date', 'data': '2026-06-01'})),
+        state['next_intake_due_at_ms'],
+        DateTime(2026, 6, 1, 15).millisecondsSinceEpoch.toString(),
       );
-      expect(
-        saved,
-        contains(
-          equals({
-            'id': 'next_intake_due_at_ms',
-            'data': DateTime(2026, 6, 1, 15).millisecondsSinceEpoch.toString(),
-          }),
-        ),
-      );
-      expect(
-        saved,
-        contains(
-          equals({'id': 'next_intake_interval_minutes', 'data': '1440'}),
-        ),
-      );
+      expect(state['next_intake_interval_minutes'], '1440');
     });
 
     test('shares the number of pending intakes for the logical day', () async {
@@ -267,12 +258,12 @@ void main() {
       when(scheduleProvider.schedules).thenReturn([daily, asNeeded]);
       when(intakeProvider.getTakenIntakesForScheduleOn(daily.id, date))
           .thenReturn([
-            aMedicationIntake(
-              time: morning,
-              scheduleId: daily.id,
-              takenDateTime: DateTime.utc(2026, 6, 1, 9),
-            ),
-          ]);
+        aMedicationIntake(
+          time: morning,
+          scheduleId: daily.id,
+          takenDateTime: DateTime.utc(2026, 6, 1, 9),
+        ),
+      ]);
       final operations = <String>[];
       final service = HomeWidgetService(
         saveWidgetData: (id, data) async {
@@ -296,18 +287,15 @@ void main() {
       );
 
       // Assert
-      expect(
-        saved,
-        contains(equals({'id': 'next_intake_today_count', 'data': '2'})),
-      );
-      expect(operations.last, 'update');
-      expect(
-        operations.indexOf('save:next_intake_today_count'),
-        lessThan(operations.indexOf('update')),
-      );
+      expect(stateAt(DateTime(2026, 6, 1, 12))['next_intake_today_count'], '2');
+      expect(operations, ['save:widget_snapshot_v1', 'update']);
+      expect(snapshot()['hrt_first_date'], '2026-01-05');
+      expect(snapshot()['app_locale'], 'fr');
+      expect(snapshot()['hrt_intake_count'], '3');
     });
 
     test('keeps an untimed interval intake date-only', () async {
+      // Arrange
       HomeWidgetService.isIOSPlatform = () => true;
       final due = Date(year: 2026, month: 6, day: 6);
       final schedule = aMedicationSchedule(
@@ -328,28 +316,21 @@ void main() {
         )),
       );
 
+      // Act
       await withClock(
         Clock.fixed(DateTime(2026, 6, 1, 12)),
         () => service.sync(intakeProvider, scheduleProvider, localeProvider),
       );
 
-      expect(
-        saved,
-        contains(equals({'id': 'next_intake_date', 'data': '2026-06-06'})),
-      );
-      expect(
-        saved,
-        contains(equals({'id': 'next_intake_due_at_ms', 'data': null})),
-      );
-      expect(
-        saved,
-        contains(
-          equals({'id': 'next_intake_interval_minutes', 'data': '10080'}),
-        ),
-      );
+      // Assert
+      final state = stateAt(DateTime(2026, 6, 1, 12));
+      expect(state['next_intake_date'], '2026-06-06');
+      expect(state['next_intake_due_at_ms'], isNull);
+      expect(state['next_intake_interval_minutes'], '10080');
     });
 
     test('clears iOS countdown data when no intake is scheduled', () async {
+      // Arrange
       HomeWidgetService.isIOSPlatform = () => true;
       final service = HomeWidgetService(
         saveWidgetData: (id, data) async => saved.add({'id': id, 'data': data}),
@@ -360,21 +341,15 @@ void main() {
         )),
       );
 
+      // Act
       await service.sync(intakeProvider, scheduleProvider, localeProvider);
 
-      expect(saved, contains(equals({'id': 'next_intake_date', 'data': null})));
-      expect(
-        saved,
-        contains(equals({'id': 'next_intake_due_at_ms', 'data': null})),
-      );
-      expect(
-        saved,
-        contains(equals({'id': 'next_intake_interval_minutes', 'data': null})),
-      );
-      expect(
-        saved,
-        contains(equals({'id': 'next_intake_today_count', 'data': null})),
-      );
+      // Assert
+      final state = stateAt(clock.now());
+      expect(state['next_intake_date'], isNull);
+      expect(state['next_intake_due_at_ms'], isNull);
+      expect(state['next_intake_interval_minutes'], isNull);
+      expect(state['next_intake_today_count'], isNull);
     });
 
     test('preserves the locale region for widget localization', () async {
@@ -417,16 +392,9 @@ void main() {
         await service.sync(intakeProvider, scheduleProvider, localeProvider);
 
         // Assert
-        expect(saved.where((entry) => entry['id'] == 'app_locale').toList(), [
-          {'id': 'app_locale', 'data': 'fr'},
-          {'id': 'app_locale', 'data': 'de'},
-        ]);
-        expect(
-          saved
-              .where((entry) => entry['id'] == 'widget_home_title')
-              .last['data'],
-          'Zeit auf HET',
-        );
+        expect(saved.map((entry) => jsonDecode(entry['data']!)['app_locale']),
+            ['fr', 'de']);
+        expect(snapshot()['widget_home_title'], 'Zeit auf HET');
         expect(updated, hasLength(2));
       },
     );
@@ -483,6 +451,7 @@ void main() {
     });
 
     test('does nothing while the schedule provider is loading', () async {
+      // Arrange
       final service = HomeWidgetService(
         saveWidgetData: (id, data) async => saved.add({'id': id, 'data': data}),
         setAppGroupId: (groupId) async => appGroups.add(groupId),
@@ -493,8 +462,10 @@ void main() {
       );
       when(scheduleProvider.isLoading).thenReturn(true);
 
+      // Act
       await service.sync(intakeProvider, scheduleProvider, localeProvider);
 
+      // Assert
       expect(saved, isEmpty);
     });
   });

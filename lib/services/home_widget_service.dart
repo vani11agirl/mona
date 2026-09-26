@@ -1,10 +1,10 @@
+import 'dart:convert';
+
 import 'package:clock/clock.dart';
-import 'package:flutter/widgets.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:mona/controllers/next_intake_resolver.dart';
 import 'package:mona/controllers/slots_builder.dart';
 import 'package:mona/data/model/date.dart';
-import 'package:mona/data/model/intake_slot.dart';
 import 'package:mona/data/model/scheduling_strategy.dart';
 import 'package:mona/data/providers/medication_intake_provider.dart';
 import 'package:mona/data/providers/medication_schedule_provider.dart';
@@ -36,68 +36,67 @@ class HomeWidgetService {
   final SaveWidgetData _saveWidgetData;
   final SetAppGroupId _setAppGroupId;
   final UpdateWidget _updateWidget;
+  Future<void> _pendingSync = Future.value();
+  String? _lastPublishedData;
+  bool? _lastPublishedOnIOS;
 
   HomeWidgetService({
     SaveWidgetData? saveWidgetData,
     SetAppGroupId? setAppGroupId,
     UpdateWidget? updateWidget,
-  }) : _saveWidgetData =
-           saveWidgetData ??
-           ((id, data) => HomeWidget.saveWidgetData<String>(id, data)),
-       _setAppGroupId =
-           setAppGroupId ??
-           ((groupId) async {
-             await HomeWidget.setAppGroupId(groupId);
-           }),
-       _updateWidget =
-           updateWidget ??
-           (({iOSName, qualifiedAndroidName}) async {
-             await HomeWidget.updateWidget(
-               iOSName: iOSName,
-               qualifiedAndroidName: qualifiedAndroidName,
-             );
-           });
+  })  : _saveWidgetData = saveWidgetData ??
+            ((id, data) => HomeWidget.saveWidgetData<String>(id, data)),
+        _setAppGroupId = setAppGroupId ??
+            ((groupId) async {
+              await HomeWidget.setAppGroupId(groupId);
+            }),
+        _updateWidget = updateWidget ??
+            (({iOSName, qualifiedAndroidName}) async {
+              await HomeWidget.updateWidget(
+                iOSName: iOSName,
+                qualifiedAndroidName: qualifiedAndroidName,
+              );
+            });
 
   Future<void> sync(
     MedicationIntakeProvider medicationIntakeProvider,
     MedicationScheduleProvider medicationScheduleProvider,
     LocaleProvider localeProvider,
   ) async {
-    if (medicationIntakeProvider.isLoading ||
+    if (!(isPlatformSupported?.call() ?? isMobile) ||
+        medicationIntakeProvider.isLoading ||
         medicationScheduleProvider.isLoading) {
       return;
     }
     final isIOS = isIOSPlatform?.call() ?? false;
-    final slots = isIOS
-        ? SlotsBuilder(
-            medicationIntakeProvider,
-            medicationScheduleProvider,
-          ).intakeSlots()
-        : <IntakeSlot>[];
-    final nextIntake = isIOS ? resolveNextIntake(slots, clock.now()) : null;
     final today = Date.today();
-    final pendingTodayCount = slots
-        .where(
-          (slot) =>
-              slot.status != ScheduleStatus.taken &&
-              slot.status != ScheduleStatus.asNeeded &&
-              !slot.date.isAfter(today),
-        )
-        .length;
-    await syncHrtTimeWidget(
-      firstDate: medicationIntakeProvider.firstTakenLocalDate,
-      locale: localeProvider.locale,
-      intakeCount: medicationIntakeProvider.takenIntakes.length,
-      recentIntakeCounts: _recentIntakeCounts(medicationIntakeProvider),
-      nextIntake: nextIntake,
-      pendingTodayCount: pendingTodayCount,
-    );
+    final locale = localeProvider.locale.toLanguageTag();
+    final intakeCount = medicationIntakeProvider.takenIntakes.length;
+    final data = <String, Object?>{
+      'hrt_first_date':
+          _dateString(medicationIntakeProvider.firstTakenLocalDate),
+      'app_locale': locale,
+      'hrt_intake_count': intakeCount.toString(),
+      'hrt_recent_intake_counts':
+          _recentIntakeCounts(medicationIntakeProvider, today).join(','),
+    };
+    if (isIOS) {
+      final strings = AppLocaleUtils.parse(locale).buildSync();
+      data.addAll({
+        'widget_home_title': strings.HrtCounter,
+        'widget_home_intakes': strings.intakesLoggedCount(count: intakeCount),
+        'widget_home_empty': strings.neverTakenYet,
+        ..._intakeTimeline(
+            medicationIntakeProvider, medicationScheduleProvider, today),
+      });
+    }
+    await _publish(data, isIOS: isIOS);
   }
 
   List<int> _recentIntakeCounts(
     MedicationIntakeProvider medicationIntakeProvider,
+    Date today,
   ) {
-    final today = Date.today();
     return List.generate(7, (index) {
       final date = today.subtract(Duration(days: 6 - index));
       return medicationIntakeProvider.takenIntakes
@@ -106,63 +105,103 @@ class HomeWidgetService {
     });
   }
 
-  Future<void> syncHrtTimeWidget({
-    required Date? firstDate,
-    required Locale locale,
-    required int intakeCount,
-    required List<int> recentIntakeCounts,
-    NextIntake? nextIntake,
-    int pendingTodayCount = 0,
-  }) async {
-    final supported = isPlatformSupported?.call() ?? isMobile;
-    if (!supported) return;
+  Map<String, Object?> _intakeTimeline(
+    MedicationIntakeProvider intakes,
+    MedicationScheduleProvider schedules,
+    Date today,
+  ) {
+    final timeline = <Map<String, String?>>[];
+    DateTime boundary(int offset) => DateTime(
+          today.year,
+          today.month,
+          today.day + offset,
+          logicalDayStartMinutes ~/ 60,
+          logicalDayStartMinutes % 60,
+        );
 
-    final isIOS = isIOSPlatform?.call() ?? false;
-    if (isIOS) {
-      await _setAppGroupId(appGroupId);
-      final strings = AppLocaleUtils.parse(locale.toLanguageTag()).buildSync();
-      await _saveWidgetData('widget_home_title', strings.HrtCounter);
-      await _saveWidgetData(
-        'widget_home_intakes',
-        strings.intakesLoggedCount(count: intakeCount),
-      );
-      await _saveWidgetData('widget_home_empty', strings.neverTakenYet);
-      await _saveWidgetData('next_intake_date', _dateString(nextIntake?.date));
-      await _saveWidgetData(
-        'next_intake_due_at_ms',
-        nextIntake?.time == null
-            ? null
-            : nextIntake!.date
-                  .toDateTimeAt(nextIntake.time!)
-                  .millisecondsSinceEpoch
-                  .toString(),
-      );
-      await _saveWidgetData(
-        'next_intake_interval_minutes',
-        nextIntake?.interval.inMinutes.toString(),
-      );
-      await _saveWidgetData(
-        'next_intake_today_count',
-        nextIntake == null ? null : pendingTodayCount.toString(),
-      );
+    // Reuse the app's scheduling rules for today and the next seven days.
+    // Predictions assume no further intakes are recorded; any edit republishes
+    // the timeline. Calendar construction preserves the 04:00 boundary at DST.
+    for (var day = 0; day <= 7; day++) {
+      final start = boundary(day);
+      final end = boundary(day + 1);
+      withClock(Clock.fixed(start), () {
+        final slots = SlotsBuilder(intakes, schedules).intakeSlots();
+        final pendingTodayCount = slots
+            .where((slot) =>
+                slot.status != ScheduleStatus.taken &&
+                slot.status != ScheduleStatus.asNeeded &&
+                slot.date == Date.today())
+            .length;
+        final changes = <DateTime>{start};
+        for (final slot in slots) {
+          if (slot.time == null || slot.status == ScheduleStatus.taken) {
+            continue;
+          }
+          final due = slot.date.toDateTimeAt(slot.time!);
+          if (!due.isBefore(start) && due.isBefore(end)) changes.add(due);
+        }
+        for (final at in changes.toList()..sort()) {
+          // At the due instant, treat that intake as due, not still upcoming.
+          final next = resolveNextIntake(
+            slots,
+            at.add(const Duration(microseconds: 1)),
+          );
+          timeline.add({
+            'from_ms': at.millisecondsSinceEpoch.toString(),
+            'next_intake_date': _dateString(next?.date),
+            'next_intake_due_at_ms': next?.time == null
+                ? null
+                : next!.date
+                    .toDateTimeAt(next.time!)
+                    .millisecondsSinceEpoch
+                    .toString(),
+            'next_intake_interval_minutes': next?.interval.inMinutes.toString(),
+            'next_intake_today_count':
+                next == null ? null : pendingTodayCount.toString(),
+          });
+        }
+      });
     }
+    return {
+      'intake_timeline': timeline,
+      'intake_timeline_end_ms': boundary(8).millisecondsSinceEpoch.toString(),
+    };
+  }
 
-    await _saveWidgetData('hrt_first_date', _dateString(firstDate));
-    await _saveWidgetData('app_locale', locale.toLanguageTag());
-    await _saveWidgetData('hrt_intake_count', intakeCount.toString());
-    await _saveWidgetData(
-      'hrt_recent_intake_counts',
-      recentIntakeCounts.join(','),
-    );
-    await _updateWidget(
-      iOSName: _iOSName,
-      qualifiedAndroidName: _qualifiedAndroidName,
-    );
+  Future<void> _publish(Map<String, Object?> data, {required bool isIOS}) {
+    // Capture the complete value before yielding to another provider callback.
+    final encoded = jsonEncode(data);
+    final publication = _pendingSync.then((_) async {
+      if (_lastPublishedOnIOS == isIOS && _lastPublishedData == encoded) return;
+
+      // A failed write/reload must not suppress the next attempt, even if the
+      // caller changes back to the last successfully published value.
+      _lastPublishedData = null;
+      if (isIOS) {
+        await _setAppGroupId(appGroupId);
+        await _saveWidgetData('widget_snapshot_v1', encoded);
+      } else {
+        // Keep the existing Glance storage contract on Android.
+        for (final entry in data.entries) {
+          await _saveWidgetData(entry.key, entry.value as String?);
+        }
+      }
+      await _updateWidget(
+        iOSName: _iOSName,
+        qualifiedAndroidName: _qualifiedAndroidName,
+      );
+      _lastPublishedData = encoded;
+      _lastPublishedOnIOS = isIOS;
+    });
+    // Recover the queue, but keep the failure visible to this call's caller.
+    _pendingSync = publication.catchError((Object _) {});
+    return publication;
   }
 
   String? _dateString(Date? date) => date == null
       ? null
       : '${date.year.toString().padLeft(4, '0')}-'
-            '${date.month.toString().padLeft(2, '0')}-'
-            '${date.day.toString().padLeft(2, '0')}';
+          '${date.month.toString().padLeft(2, '0')}-'
+          '${date.day.toString().padLeft(2, '0')}';
 }

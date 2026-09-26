@@ -4,6 +4,46 @@ import WidgetKit
 private let widgetKind = "HrtWidget"
 private let appGroupID = "group.com.deliacheminot.mona"
 
+private func sharedWidgetData() -> [String: Any] {
+    guard let defaults = UserDefaults(suiteName: appGroupID) else { return [:] }
+    // Read one published value, never a mixture of fields from two app syncs.
+    // Retain pre-upgrade data until the app publishes its first snapshot.
+    guard let encoded = defaults.string(forKey: "widget_snapshot_v1") else {
+        return defaults.dictionaryRepresentation()
+    }
+    guard let bytes = encoded.data(using: .utf8),
+          let data = try? JSONSerialization.jsonObject(with: bytes) as? [String: Any]
+    else { return [:] }
+    return data
+}
+
+private func widgetInstant(_ value: Any?) -> Date? {
+    guard let raw = value as? String, let milliseconds = Double(raw),
+          milliseconds.isFinite else { return nil }
+    return Date(timeIntervalSince1970: milliseconds / 1000)
+}
+
+private func intakeData(at date: Date, in data: [String: Any]) -> (values: [String: Any], expired: Bool) {
+    guard let timeline = data["intake_timeline"] as? [[String: Any]] else {
+        return (data, false)
+    }
+    guard let end = widgetInstant(data["intake_timeline_end_ms"]),
+          let current = timeline.last(where: {
+              guard let start = widgetInstant($0["from_ms"]) else { return false }
+              return start <= date
+          }) else {
+        return ([:], true)
+    }
+    if date >= end, let next = NextIntakeSnapshot(data: current),
+       next.countdown(at: date).remainingMinutes <= 0 {
+        // "Today" totals have expired. A known intake still in the future can
+        // keep counting down (e.g. a monthly schedule), but must not reuse an
+        // old day's count once it becomes due.
+        return ([:], true)
+    }
+    return (current, false)
+}
+
 private func widgetDay(_ raw: String, calendar: Calendar = .current) -> Date? {
     let parts = raw.split(separator: "-")
     guard parts.count == 3,
@@ -21,9 +61,9 @@ fileprivate struct NextIntakeSnapshot {
     let dueAt: Date?
     let intervalMinutes: Int
 
-    init?(defaults: UserDefaults) {
-        guard let dateString = defaults.string(forKey: "next_intake_date"),
-              let intervalString = defaults.string(forKey: "next_intake_interval_minutes"),
+    init?(data: [String: Any]) {
+        guard let dateString = data["next_intake_date"] as? String,
+              let intervalString = data["next_intake_interval_minutes"] as? String,
               let intervalMinutes = Int(intervalString), intervalMinutes > 0
         else {
             return nil
@@ -34,12 +74,7 @@ fileprivate struct NextIntakeSnapshot {
 
         self.dueDay = Calendar.current.startOfDay(for: parsedDay)
         self.intervalMinutes = intervalMinutes
-        if let rawInstant = defaults.string(forKey: "next_intake_due_at_ms"),
-           let milliseconds = Int64(rawInstant) {
-            self.dueAt = Date(timeIntervalSince1970: Double(milliseconds) / 1000)
-        } else {
-            self.dueAt = nil
-        }
+        self.dueAt = widgetInstant(data["next_intake_due_at_ms"])
     }
 
     func countdown(at now: Date) -> NextIntakeCountdown {
@@ -91,7 +126,7 @@ private struct NextIntakeCountdown {
 
     func rectangularText(copy: WidgetCopy, pendingTodayCount: Int) -> String {
         if remainingMinutes <= 0 {
-            return copy.countToday(max(1, pendingTodayCount))
+            return copy.countToday(max(0, pendingTodayCount))
         }
         if remainingMinutes >= 24 * 60 {
             return copy.relative(display.unit.components(value: display.value), abbreviated: false)
@@ -101,7 +136,7 @@ private struct NextIntakeCountdown {
 
     func accessibilityLabel(copy: WidgetCopy, pendingTodayCount: Int) -> String {
         if remainingMinutes <= 0 {
-            return "\(copy.intakesDue), \(copy.countToday(max(1, pendingTodayCount)))"
+            return "\(copy.intakesDue), \(copy.countToday(max(0, pendingTodayCount)))"
         }
         let time = remainingMinutes >= 24 * 60
             ? copy.relative(display.unit.components(value: display.value), abbreviated: false)
@@ -190,8 +225,8 @@ fileprivate enum HrtDurationUnit: String {
 private struct HrtDurationSnapshot {
     let firstDay: Date
 
-    init?(defaults: UserDefaults) {
-        guard let raw = defaults.string(forKey: "hrt_first_date"),
+    init?(data: [String: Any]) {
+        guard let raw = data["hrt_first_date"] as? String,
               let day = widgetDay(raw)
         else { return nil }
         firstDay = day
@@ -228,6 +263,7 @@ struct HrtWidgetEntry: TimelineEntry {
     let recentIntakeCounts: [Int]
     fileprivate let nextIntake: NextIntakeSnapshot?
     let pendingTodayCount: Int
+    let intakeTimelineExpired: Bool
     let localeIdentifier: String
     let homeTitle: String
     let homeIntakeText: String
@@ -249,7 +285,7 @@ struct HrtWidgetEntry: TimelineEntry {
 
 struct HrtWidgetProvider: TimelineProvider {
     func placeholder(in context: Context) -> HrtWidgetEntry {
-        entry(at: Date(), nextIntake: sharedNextIntake)
+        entry(at: Date(), data: sharedWidgetData())
     }
 
     func getSnapshot(
@@ -257,7 +293,7 @@ struct HrtWidgetProvider: TimelineProvider {
         completion: @escaping (HrtWidgetEntry) -> Void
     ) {
         let now = Date()
-        completion(entry(at: now, nextIntake: sharedNextIntake))
+        completion(entry(at: now, data: sharedWidgetData()))
     }
 
     func getTimeline(
@@ -265,19 +301,14 @@ struct HrtWidgetProvider: TimelineProvider {
         completion: @escaping (Timeline<HrtWidgetEntry>) -> Void
     ) {
         let now = Date()
-        let nextIntake = sharedNextIntake
-        let entries = timelineDates(from: now, for: nextIntake).map {
-            entry(at: $0, nextIntake: nextIntake)
+        let data = sharedWidgetData()
+        let entries = timelineDates(from: now, data: data).map {
+            entry(at: $0, data: data)
         }
         completion(Timeline(entries: entries, policy: .atEnd))
     }
 
-    private var sharedNextIntake: NextIntakeSnapshot? {
-        guard let defaults = UserDefaults(suiteName: appGroupID) else { return nil }
-        return NextIntakeSnapshot(defaults: defaults)
-    }
-
-    private func timelineDates(from now: Date, for nextIntake: NextIntakeSnapshot?) -> [Date] {
+    private func timelineDates(from now: Date, data: [String: Any]) -> [Date] {
         let calendar = Calendar.current
         let horizon = calendar.date(byAdding: .day, value: 7, to: now)
             ?? now.addingTimeInterval(7 * 24 * 60 * 60)
@@ -296,26 +327,45 @@ struct HrtWidgetProvider: TimelineProvider {
             }
         }
 
-        if let dueAt = nextIntake?.dueAt {
-            var cursor = now
-            while cursor < horizon {
+        if let timeline = data["intake_timeline"] as? [[String: Any]] {
+            for state in timeline {
+                if let change = widgetInstant(state["from_ms"]), change > now, change <= horizon {
+                    dates.insert(change)
+                }
+                if let due = widgetInstant(state["next_intake_due_at_ms"]), due > now, due <= horizon {
+                    dates.insert(due)
+                }
+            }
+        }
+        if let end = widgetInstant(data["intake_timeline_end_ms"]), end > now, end <= horizon {
+            dates.insert(end)
+        }
+
+        // Each segment uses its own selected intake, including after 04:00.
+        // Include exact schedule transitions independently of countdown steps.
+        let boundaries = dates.union([horizon]).sorted()
+        for (start, end) in zip(boundaries, boundaries.dropFirst()) {
+            let state = intakeData(at: start, in: data)
+            guard let dueAt = NextIntakeSnapshot(data: state.values)?.dueAt, dueAt > start else { continue }
+            var cursor = start
+            while cursor < min(end, dueAt) {
                 let distance = abs(dueAt.timeIntervalSince(cursor))
                 let step: TimeInterval = distance < 60 * 60 ? 5 * 60
                     : distance < 24 * 60 * 60 ? 15 * 60 : 6 * 60 * 60
                 cursor = cursor.addingTimeInterval(step)
-                if cursor <= horizon { dates.insert(cursor) }
+                if cursor < min(end, dueAt) { dates.insert(cursor) }
             }
         }
         return dates.sorted()
     }
 
-    private func entry(at date: Date, nextIntake: NextIntakeSnapshot?) -> HrtWidgetEntry {
-        let defaults = UserDefaults(suiteName: appGroupID)
-        let localeIdentifier = defaults?.string(forKey: "app_locale") ?? Locale.current.identifier
+    private func entry(at date: Date, data: [String: Any]) -> HrtWidgetEntry {
+        let state = intakeData(at: date, in: data)
+        let localeIdentifier = data["app_locale"] as? String ?? Locale.current.identifier
         let copy = WidgetCopy(localeIdentifier: localeIdentifier)
-        let duration = defaults.flatMap { HrtDurationSnapshot(defaults: $0) }?.duration(at: date)
-        let intakeCount = max(0, Int(defaults?.string(forKey: "hrt_intake_count") ?? "") ?? 0)
-        let recentCounts = defaults?.string(forKey: "hrt_recent_intake_counts")?
+        let duration = HrtDurationSnapshot(data: data)?.duration(at: date)
+        let intakeCount = max(0, Int(data["hrt_intake_count"] as? String ?? "") ?? 0)
+        let recentCounts = (data["hrt_recent_intake_counts"] as? String)?
             .split(separator: ",")
             .map { max(0, Int($0) ?? 0) }
         let normalizedRecentCounts = recentCounts?.count == 7
@@ -330,13 +380,14 @@ struct HrtWidgetProvider: TimelineProvider {
             showsIntakes: duration != nil,
             hasHrtData: duration != nil,
             recentIntakeCounts: normalizedRecentCounts,
-            nextIntake: nextIntake,
-            pendingTodayCount: max(0, Int(defaults?.string(forKey: "next_intake_today_count") ?? "") ?? 0),
+            nextIntake: NextIntakeSnapshot(data: state.values),
+            pendingTodayCount: max(0, Int(state.values["next_intake_today_count"] as? String ?? "") ?? 0),
+            intakeTimelineExpired: state.expired,
             localeIdentifier: localeIdentifier,
-            homeTitle: defaults?.string(forKey: "widget_home_title") ?? copy.homeTitle,
-            homeIntakeText: defaults?.string(forKey: "widget_home_intakes")
+            homeTitle: data["widget_home_title"] as? String ?? copy.homeTitle,
+            homeIntakeText: data["widget_home_intakes"] as? String
                 ?? "",
-            homeEmptyText: defaults?.string(forKey: "widget_home_empty") ?? copy.homeEmpty
+            homeEmptyText: data["widget_home_empty"] as? String ?? copy.homeEmpty
         )
     }
 }
@@ -631,14 +682,14 @@ struct HrtWidgetEntryView: View {
                     VStack(spacing: -3) {
                         Text("—")
                             .font(.system(size: 25, weight: .medium, design: .rounded))
-                        Text(entry.copy.noPlan.uppercased(with: entry.copy.locale))
+                        Text(entry.intakeTimelineExpired ? "" : entry.copy.noPlan.uppercased(with: entry.copy.locale))
                             .font(.system(size: 10, weight: .medium, design: .rounded))
                     }
                 }
                 .gaugeStyle(.accessoryCircularCapacity)
                 .widgetAccentable()
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel(entry.copy.noSchedule)
+                .accessibilityLabel(emptyIntakeText)
             }
         } else if family == .accessoryRectangular {
             VStack(alignment: .leading, spacing: 2) {
@@ -647,7 +698,7 @@ struct HrtWidgetEntryView: View {
                 Text(countdown?.rectangularText(
                     copy: entry.copy,
                     pendingTodayCount: entry.pendingTodayCount
-                ) ?? entry.copy.noSchedule)
+                ) ?? emptyIntakeText)
                     .font(.system(size: 21, weight: .semibold, design: .rounded))
                     .lineLimit(1)
                     .minimumScaleFactor(0.75)
@@ -660,10 +711,14 @@ struct HrtWidgetEntryView: View {
                 copy: entry.copy,
                 pendingTodayCount: entry.pendingTodayCount
             )
-                ?? entry.copy.noSchedule)
+                ?? emptyIntakeText)
         } else {
             EmptyView()
         }
+    }
+
+    private var emptyIntakeText: String {
+        entry.intakeTimelineExpired ? "—" : entry.copy.noSchedule
     }
 }
 
@@ -697,7 +752,7 @@ private extension View {
 
 struct HrtWidget: Widget {
     private var pickerCopy: WidgetCopy {
-        let savedLocale = UserDefaults(suiteName: appGroupID)?.string(forKey: "app_locale")
+        let savedLocale = sharedWidgetData()["app_locale"] as? String
         return WidgetCopy(localeIdentifier: savedLocale ?? Locale.current.identifier)
     }
 
