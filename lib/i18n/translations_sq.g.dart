@@ -587,24 +587,6 @@ class TranslationsSq extends Translations
   @override
   String get estradiolLevelsTitle => 'Nivelet e estradiolit';
   @override
-  String get iosWidgetNextIntake => 'Marrja e radhës';
-  @override
-  String get iosWidgetIntakeDue => 'Koha e marrjes';
-  @override
-  String get iosWidgetDue => 'Tani';
-  @override
-  String get iosWidgetLate => 'Me vonesë';
-  @override
-  String get iosWidgetNoPlan => 'Pa plan';
-  @override
-  String get iosWidgetNoSchedule => 'Nuk ka orare';
-  @override
-  String get iosWidgetNow => 'Tani';
-  @override
-  String iosWidgetFuture({required Object duration}) => 'pas ${duration}';
-  @override
-  String iosWidgetPast({required Object duration}) => '${duration} më parë';
-  @override
   String daysAgoCount({required num count}) =>
       (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('sq'))(
         count,
@@ -1057,15 +1039,6 @@ extension on TranslationsSq {
       'empty_levels' =>
         'Shto një analizë gjaku ose regjistro një injeksion estradioli për të fillua',
       'estradiolLevelsTitle' => 'Nivelet e estradiolit',
-      'iosWidgetNextIntake' => 'Marrja e radhës',
-      'iosWidgetIntakeDue' => 'Koha e marrjes',
-      'iosWidgetDue' => 'Tani',
-      'iosWidgetLate' => 'Me vonesë',
-      'iosWidgetNoPlan' => 'Pa plan',
-      'iosWidgetNoSchedule' => 'Nuk ka orare',
-      'iosWidgetNow' => 'Tani',
-      'iosWidgetFuture' => ({required Object duration}) => 'pas ${duration}',
-      'iosWidgetPast' => ({required Object duration}) => '${duration} më parë',
       'daysAgoCount' => ({required num count}) =>
           (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('sq'))(
             count,

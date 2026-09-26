@@ -3,11 +3,11 @@
     "HrtCounter": "Zeit auf HET",
     "HrtCounterDescription": "Zeigt, wie lange du schon HET nimmst, sowie die Gesamtzahl deiner Einnahmen",
     "neverTakenYet": "Noch nie genommen",
-    "iosWidgetNextIntake": "Nächste Einnahme",
+    "iosWidgetNextIntake": "Next intake",
     "iosWidgetIntakesDue": "Intakes due",
     "iosWidgetCountToday": "{{count}} today",
-    "iosWidgetNoPlan": "Kein Plan",
-    "iosWidgetNoSchedule": "Kein Zeitplan",
+    "iosWidgetNoPlan": "No plan",
+    "iosWidgetNoSchedule": "No schedule",
     "iosWidgetFuture": "in {{duration}}"
   },
   "en": {
@@ -36,177 +36,177 @@
     "HrtCounter": "Tiempo en TH",
     "HrtCounterDescription": "Muestra cuánto tiempo llevas en TH y el total de tomas",
     "neverTakenYet": "Aún no tomado",
-    "iosWidgetNextIntake": "Próxima toma",
+    "iosWidgetNextIntake": "Next intake",
     "iosWidgetIntakesDue": "Intakes due",
     "iosWidgetCountToday": "{{count}} today",
-    "iosWidgetNoPlan": "Sin plan",
-    "iosWidgetNoSchedule": "Sin horarios",
-    "iosWidgetFuture": "en {{duration}}"
+    "iosWidgetNoPlan": "No plan",
+    "iosWidgetNoSchedule": "No schedule",
+    "iosWidgetFuture": "in {{duration}}"
   },
   "et": {
     "HrtCounter": "Time on HRT",
     "HrtCounterDescription": "Show how long you've been on HRT and your total intakes",
     "neverTakenYet": "Pole kunagi võetud",
-    "iosWidgetNextIntake": "Järgmine annus",
+    "iosWidgetNextIntake": "Next intake",
     "iosWidgetIntakesDue": "Intakes due",
     "iosWidgetCountToday": "{{count}} today",
-    "iosWidgetNoPlan": "Plaan puudub",
-    "iosWidgetNoSchedule": "Ajakava puudub",
-    "iosWidgetFuture": "{{duration}} pärast"
+    "iosWidgetNoPlan": "No plan",
+    "iosWidgetNoSchedule": "No schedule",
+    "iosWidgetFuture": "in {{duration}}"
   },
   "fr": {
     "HrtCounter": "Temps sous THS",
     "HrtCounterDescription": "Affiche depuis combien de temps vous êtes sous THS et votre nombre total de prises",
     "neverTakenYet": "Jamais pris auparavant",
-    "iosWidgetNextIntake": "Prochaine prise",
+    "iosWidgetNextIntake": "Next intake",
     "iosWidgetIntakesDue": "Intakes due",
     "iosWidgetCountToday": "{{count}} today",
-    "iosWidgetNoPlan": "Aucun plan",
-    "iosWidgetNoSchedule": "Aucun planning",
-    "iosWidgetFuture": "dans {{duration}}"
+    "iosWidgetNoPlan": "No plan",
+    "iosWidgetNoSchedule": "No schedule",
+    "iosWidgetFuture": "in {{duration}}"
   },
   "gl": {
     "HrtCounter": "Time on HRT",
     "HrtCounterDescription": "Show how long you've been on HRT and your total intakes",
     "neverTakenYet": "Non tomado nunca",
-    "iosWidgetNextIntake": "Próxima toma",
+    "iosWidgetNextIntake": "Next intake",
     "iosWidgetIntakesDue": "Intakes due",
     "iosWidgetCountToday": "{{count}} today",
-    "iosWidgetNoPlan": "Sen plan",
-    "iosWidgetNoSchedule": "Sen horarios",
-    "iosWidgetFuture": "en {{duration}}"
+    "iosWidgetNoPlan": "No plan",
+    "iosWidgetNoSchedule": "No schedule",
+    "iosWidgetFuture": "in {{duration}}"
   },
   "is": {
     "HrtCounter": "Time on HRT",
     "HrtCounterDescription": "Sýnið hversu lengi þið hafið verið á HRT og heildarinntöku ykkar",
     "neverTakenYet": "Aldrei tekið ennþá",
-    "iosWidgetNextIntake": "Næsta inntaka",
+    "iosWidgetNextIntake": "Next intake",
     "iosWidgetIntakesDue": "Intakes due",
     "iosWidgetCountToday": "{{count}} today",
-    "iosWidgetNoPlan": "Engin áætlun",
-    "iosWidgetNoSchedule": "Engin áætlun",
-    "iosWidgetFuture": "eftir {{duration}}"
+    "iosWidgetNoPlan": "No plan",
+    "iosWidgetNoSchedule": "No schedule",
+    "iosWidgetFuture": "in {{duration}}"
   },
   "it": {
     "HrtCounter": "Time on HRT",
     "HrtCounterDescription": "Show how long you've been on HRT and your total intakes",
     "neverTakenYet": "Ancora nessuna dose",
-    "iosWidgetNextIntake": "Prossima dose",
+    "iosWidgetNextIntake": "Next intake",
     "iosWidgetIntakesDue": "Intakes due",
     "iosWidgetCountToday": "{{count}} today",
-    "iosWidgetNoPlan": "Nessun piano",
-    "iosWidgetNoSchedule": "Nessun programma",
-    "iosWidgetFuture": "tra {{duration}}"
+    "iosWidgetNoPlan": "No plan",
+    "iosWidgetNoSchedule": "No schedule",
+    "iosWidgetFuture": "in {{duration}}"
   },
   "ko": {
     "HrtCounter": "Time on HRT",
     "HrtCounterDescription": "Show how long you've been on HRT and your total intakes",
     "neverTakenYet": "아직 투여한 적 없음",
-    "iosWidgetNextIntake": "다음 투여",
+    "iosWidgetNextIntake": "Next intake",
     "iosWidgetIntakesDue": "Intakes due",
     "iosWidgetCountToday": "{{count}} today",
-    "iosWidgetNoPlan": "계획 없음",
-    "iosWidgetNoSchedule": "일정 없음",
-    "iosWidgetFuture": "{{duration}} 후"
+    "iosWidgetNoPlan": "No plan",
+    "iosWidgetNoSchedule": "No schedule",
+    "iosWidgetFuture": "in {{duration}}"
   },
   "nl": {
     "HrtCounter": "Tijd op HRT",
     "HrtCounterDescription": "Laat zien hoe lang je aan HRT zit en je totale innames",
     "neverTakenYet": "Nog niet (in)genomen",
-    "iosWidgetNextIntake": "Volgende inname",
+    "iosWidgetNextIntake": "Next intake",
     "iosWidgetIntakesDue": "Intakes due",
     "iosWidgetCountToday": "{{count}} today",
-    "iosWidgetNoPlan": "Geen plan",
-    "iosWidgetNoSchedule": "Geen schema",
-    "iosWidgetFuture": "over {{duration}}"
+    "iosWidgetNoPlan": "No plan",
+    "iosWidgetNoSchedule": "No schedule",
+    "iosWidgetFuture": "in {{duration}}"
   },
   "pl": {
     "HrtCounter": "Czas na HTZ",
     "HrtCounterDescription": "Pokazuje, jak długo jesteś na HTZ oraz łączną liczbę przyjęć",
     "neverTakenYet": "Jeszcze nie przyjęto",
-    "iosWidgetNextIntake": "Następne przyjęcie",
+    "iosWidgetNextIntake": "Next intake",
     "iosWidgetIntakesDue": "Intakes due",
     "iosWidgetCountToday": "{{count}} today",
-    "iosWidgetNoPlan": "Brak planu",
-    "iosWidgetNoSchedule": "Brak harmonogramu",
-    "iosWidgetFuture": "za {{duration}}"
+    "iosWidgetNoPlan": "No plan",
+    "iosWidgetNoSchedule": "No schedule",
+    "iosWidgetFuture": "in {{duration}}"
   },
   "pt": {
     "HrtCounter": "Tempo em TH",
     "HrtCounterDescription": "Mostra há quanto tempo estás em TH e o total de tomas",
     "neverTakenYet": "Ainda não tomado",
-    "iosWidgetNextIntake": "Próxima toma",
+    "iosWidgetNextIntake": "Next intake",
     "iosWidgetIntakesDue": "Intakes due",
     "iosWidgetCountToday": "{{count}} today",
-    "iosWidgetNoPlan": "Sem plano",
-    "iosWidgetNoSchedule": "Sem cronograma",
-    "iosWidgetFuture": "daqui a {{duration}}"
+    "iosWidgetNoPlan": "No plan",
+    "iosWidgetNoSchedule": "No schedule",
+    "iosWidgetFuture": "in {{duration}}"
   },
   "pt-BR": {
     "HrtCounter": "Tempo em TH",
     "HrtCounterDescription": "Mostra há quanto tempo você está em TH e o total de doses",
     "neverTakenYet": "Ainda não tomado",
-    "iosWidgetNextIntake": "Próxima dose",
+    "iosWidgetNextIntake": "Next intake",
     "iosWidgetIntakesDue": "Intakes due",
     "iosWidgetCountToday": "{{count}} today",
-    "iosWidgetNoPlan": "Sem plano",
-    "iosWidgetNoSchedule": "Sem cronograma",
-    "iosWidgetFuture": "em {{duration}}"
+    "iosWidgetNoPlan": "No plan",
+    "iosWidgetNoSchedule": "No schedule",
+    "iosWidgetFuture": "in {{duration}}"
   },
   "ru": {
     "HrtCounter": "Время на ЗГТ",
     "HrtCounterDescription": "Показывает, сколько времени вы на ЗГТ, и общее количество приёмов",
     "neverTakenYet": "Ещё не принято",
-    "iosWidgetNextIntake": "Следующий приём",
+    "iosWidgetNextIntake": "Next intake",
     "iosWidgetIntakesDue": "Intakes due",
     "iosWidgetCountToday": "{{count}} today",
-    "iosWidgetNoPlan": "Нет плана",
-    "iosWidgetNoSchedule": "Нет расписания",
-    "iosWidgetFuture": "через {{duration}}"
+    "iosWidgetNoPlan": "No plan",
+    "iosWidgetNoSchedule": "No schedule",
+    "iosWidgetFuture": "in {{duration}}"
   },
   "sk": {
     "HrtCounter": "Čas na HRT",
     "HrtCounterDescription": "Zobraziť dobu užívania HRT a celkový počet dávok",
     "neverTakenYet": "Nevzatá nikdy",
-    "iosWidgetNextIntake": "Ďalšia dávka",
+    "iosWidgetNextIntake": "Next intake",
     "iosWidgetIntakesDue": "Intakes due",
     "iosWidgetCountToday": "{{count}} today",
-    "iosWidgetNoPlan": "Bez plánu",
-    "iosWidgetNoSchedule": "Žiadny plán",
-    "iosWidgetFuture": "o {{duration}}"
+    "iosWidgetNoPlan": "No plan",
+    "iosWidgetNoSchedule": "No schedule",
+    "iosWidgetFuture": "in {{duration}}"
   },
   "sq": {
     "HrtCounter": "Koha në HRT",
     "HrtCounterDescription": "Shfaq prej sa kohësh je në HRT dhe marrjet e tua gjithsej",
     "neverTakenYet": "Ende e pamarrë",
-    "iosWidgetNextIntake": "Marrja e radhës",
+    "iosWidgetNextIntake": "Next intake",
     "iosWidgetIntakesDue": "Intakes due",
     "iosWidgetCountToday": "{{count}} today",
-    "iosWidgetNoPlan": "Pa plan",
-    "iosWidgetNoSchedule": "Nuk ka orare",
-    "iosWidgetFuture": "pas {{duration}}"
+    "iosWidgetNoPlan": "No plan",
+    "iosWidgetNoSchedule": "No schedule",
+    "iosWidgetFuture": "in {{duration}}"
   },
   "sv": {
     "HrtCounter": "Tid på HRT",
     "HrtCounterDescription": "Visar hur länge du varit på HRT och dina totala intag",
     "neverTakenYet": "Aldrig tagits än",
-    "iosWidgetNextIntake": "Nästa intag",
+    "iosWidgetNextIntake": "Next intake",
     "iosWidgetIntakesDue": "Intakes due",
     "iosWidgetCountToday": "{{count}} today",
-    "iosWidgetNoPlan": "Ingen plan",
-    "iosWidgetNoSchedule": "Inga scheman",
-    "iosWidgetFuture": "om {{duration}}"
+    "iosWidgetNoPlan": "No plan",
+    "iosWidgetNoSchedule": "No schedule",
+    "iosWidgetFuture": "in {{duration}}"
   },
   "th": {
     "HrtCounter": "Time on HRT",
     "HrtCounterDescription": "แสดงว่าคุณเทคฮอร์โมนมานานขนาดใหนและเทคกี่ครั้ง",
     "neverTakenYet": "ยังไม่เคยทาน",
-    "iosWidgetNextIntake": "รับยาครั้งถัดไป",
+    "iosWidgetNextIntake": "Next intake",
     "iosWidgetIntakesDue": "Intakes due",
     "iosWidgetCountToday": "{{count}} today",
-    "iosWidgetNoPlan": "ไม่มีแผน",
-    "iosWidgetNoSchedule": "ไม่มีตารางเวลา",
-    "iosWidgetFuture": "อีก {{duration}}"
+    "iosWidgetNoPlan": "No plan",
+    "iosWidgetNoSchedule": "No schedule",
+    "iosWidgetFuture": "in {{duration}}"
   },
   "tok": {
     "HrtCounter": "Time on HRT",
@@ -223,23 +223,23 @@
     "HrtCounter": "Час на ЗГТ",
     "HrtCounterDescription": "Показує, скільки часу ви на ЗГТ, і загальну кількість прийомів",
     "neverTakenYet": "Ще не приймалось",
-    "iosWidgetNextIntake": "Наступний прийом",
+    "iosWidgetNextIntake": "Next intake",
     "iosWidgetIntakesDue": "Intakes due",
     "iosWidgetCountToday": "{{count}} today",
-    "iosWidgetNoPlan": "Немає плану",
-    "iosWidgetNoSchedule": "Розкладу немає",
-    "iosWidgetFuture": "через {{duration}}"
+    "iosWidgetNoPlan": "No plan",
+    "iosWidgetNoSchedule": "No schedule",
+    "iosWidgetFuture": "in {{duration}}"
   },
   "ur": {
     "HrtCounter": "‫HRT پر وقت",
     "HrtCounterDescription": "‫آپ کتنے وقت سے HRT پر ہیں اور اپنی مکمل مدخل دکھائیے‫",
     "neverTakenYet": "ابھی تک نوش نہیں کیا",
-    "iosWidgetNextIntake": "اگلی خوراک",
+    "iosWidgetNextIntake": "Next intake",
     "iosWidgetIntakesDue": "Intakes due",
     "iosWidgetCountToday": "{{count}} today",
-    "iosWidgetNoPlan": "کوئی منصوبہ نہیں",
-    "iosWidgetNoSchedule": "کوئی شیڈیول نہیں",
-    "iosWidgetFuture": "{{duration}} میں"
+    "iosWidgetNoPlan": "No plan",
+    "iosWidgetNoSchedule": "No schedule",
+    "iosWidgetFuture": "in {{duration}}"
   },
   "zh-Hans": {
     "HrtCounter": "HRT 时长",

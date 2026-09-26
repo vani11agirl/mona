@@ -562,24 +562,6 @@ class TranslationsSk extends Translations
   @override
   String get hrtWidgetPreviewIntakeSample => '16 zaznamenaných dávok';
   @override
-  String get iosWidgetNextIntake => 'Ďalšia dávka';
-  @override
-  String get iosWidgetIntakeDue => 'Čas na dávku';
-  @override
-  String get iosWidgetDue => 'Teraz';
-  @override
-  String get iosWidgetLate => 'Mešká';
-  @override
-  String get iosWidgetNoPlan => 'Bez plánu';
-  @override
-  String get iosWidgetNoSchedule => 'Žiadny plán';
-  @override
-  String get iosWidgetNow => 'Teraz';
-  @override
-  String iosWidgetFuture({required Object duration}) => 'o ${duration}';
-  @override
-  String iosWidgetPast({required Object duration}) => 'pred ${duration}';
-  @override
   String daysAgoCount({required num count}) =>
       (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('sk'))(
         count,
@@ -1042,15 +1024,6 @@ extension on TranslationsSk {
       'hrtWidgetPlaceholder' => 'Otvorte Mona a zaznamenajte svoje prvé dávky',
       'hrtWidgetPreviewSample' => 'Na HRT 8 mesiacov',
       'hrtWidgetPreviewIntakeSample' => '16 zaznamenaných dávok',
-      'iosWidgetNextIntake' => 'Ďalšia dávka',
-      'iosWidgetIntakeDue' => 'Čas na dávku',
-      'iosWidgetDue' => 'Teraz',
-      'iosWidgetLate' => 'Mešká',
-      'iosWidgetNoPlan' => 'Bez plánu',
-      'iosWidgetNoSchedule' => 'Žiadny plán',
-      'iosWidgetNow' => 'Teraz',
-      'iosWidgetFuture' => ({required Object duration}) => 'o ${duration}',
-      'iosWidgetPast' => ({required Object duration}) => 'pred ${duration}',
       'daysAgoCount' => ({required num count}) =>
           (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('sk'))(
             count,

@@ -293,14 +293,5 @@
   "invalidTotalAmount": "Sasi totale e pavlefshme",
   "cannotExceedTotalCapacity": "Nuk mund të tejkalojë kapacitetin total",
   "empty_levels": "Shto një analizë gjaku ose regjistro një injeksion estradioli për të fillua",
-  "estradiolLevelsTitle": "Nivelet e estradiolit",
-  "iosWidgetNextIntake": "Marrja e radhës",
-  "iosWidgetIntakeDue": "Koha e marrjes",
-  "iosWidgetDue": "Tani",
-  "iosWidgetLate": "Me vonesë",
-  "iosWidgetNoPlan": "Pa plan",
-  "iosWidgetNoSchedule": "Nuk ka orare",
-  "iosWidgetNow": "Tani",
-  "iosWidgetFuture": "pas {{duration}}",
-  "iosWidgetPast": "{{duration}} më parë"
+  "estradiolLevelsTitle": "Nivelet e estradiolit"
 }

@@ -146,14 +146,5 @@
   "deleteIntake": "اس مدخل کو حذف کیا جائے؟",
   "takeMedication": "‫{{scheduleName}} لیجیے",
   "takeIntake": "مدخل لیجیے",
-  "intakeRecorded": "مدخل ریکارڈ ہوا",
-  "iosWidgetNextIntake": "اگلی خوراک",
-  "iosWidgetIntakeDue": "خوراک کا وقت",
-  "iosWidgetDue": "وقت",
-  "iosWidgetLate": "تاخیر",
-  "iosWidgetNoPlan": "کوئی منصوبہ نہیں",
-  "iosWidgetNoSchedule": "کوئی شیڈیول نہیں",
-  "iosWidgetNow": "ابھی",
-  "iosWidgetFuture": "{{duration}} میں",
-  "iosWidgetPast": "{{duration}} پہلے"
+  "intakeRecorded": "مدخل ریکارڈ ہوا"
 }

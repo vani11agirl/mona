@@ -532,24 +532,6 @@ class TranslationsTh extends Translations
   String get HrtCounterDescription =>
       'แสดงว่าคุณเทคฮอร์โมนมานานขนาดใหนและเทคกี่ครั้ง';
   @override
-  String get iosWidgetNextIntake => 'รับยาครั้งถัดไป';
-  @override
-  String get iosWidgetIntakeDue => 'ถึงเวลารับยา';
-  @override
-  String get iosWidgetDue => 'ถึงเวลา';
-  @override
-  String get iosWidgetLate => 'เลยกำหนด';
-  @override
-  String get iosWidgetNoPlan => 'ไม่มีแผน';
-  @override
-  String get iosWidgetNoSchedule => 'ไม่มีตารางเวลา';
-  @override
-  String get iosWidgetNow => 'ตอนนี้';
-  @override
-  String iosWidgetFuture({required Object duration}) => 'อีก ${duration}';
-  @override
-  String iosWidgetPast({required Object duration}) => '${duration} ที่ผ่านมา';
-  @override
   String daysAgoCount({required num count}) =>
       (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('th'))(
         count,
@@ -946,16 +928,6 @@ extension on TranslationsTh {
       'mustBeBetween1And28' => 'ระหว่างวันที่ 1 ถึง 28 เท่านั้น',
       'HrtCounterDescription' =>
         'แสดงว่าคุณเทคฮอร์โมนมานานขนาดใหนและเทคกี่ครั้ง',
-      'iosWidgetNextIntake' => 'รับยาครั้งถัดไป',
-      'iosWidgetIntakeDue' => 'ถึงเวลารับยา',
-      'iosWidgetDue' => 'ถึงเวลา',
-      'iosWidgetLate' => 'เลยกำหนด',
-      'iosWidgetNoPlan' => 'ไม่มีแผน',
-      'iosWidgetNoSchedule' => 'ไม่มีตารางเวลา',
-      'iosWidgetNow' => 'ตอนนี้',
-      'iosWidgetFuture' => ({required Object duration}) => 'อีก ${duration}',
-      'iosWidgetPast' => ({required Object duration}) =>
-          '${duration} ที่ผ่านมา',
       'daysAgoCount' => ({required num count}) =>
           (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('th'))(
             count,

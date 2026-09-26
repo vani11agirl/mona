@@ -292,14 +292,5 @@
   "scheduleFrequencyAsNeeded": "Nach Bedarf",
   "empty_levels": "Trage eine Blutuntersuchung oder Estradiol-Injektion ein, um loszulegen",
   "estradiolLevelsTitle": "Estradiol-Werte",
-  "unitNgPerMl": "ng/mL",
-  "iosWidgetNextIntake": "Nächste Einnahme",
-  "iosWidgetIntakeDue": "Einnahme fällig",
-  "iosWidgetDue": "Fällig",
-  "iosWidgetLate": "Verspätet",
-  "iosWidgetNoPlan": "Kein Plan",
-  "iosWidgetNoSchedule": "Kein Zeitplan",
-  "iosWidgetNow": "Jetzt",
-  "iosWidgetFuture": "in {{duration}}",
-  "iosWidgetPast": "vor {{duration}}"
+  "unitNgPerMl": "ng/mL"
 }

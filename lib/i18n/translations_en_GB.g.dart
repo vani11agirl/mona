@@ -616,24 +616,6 @@ class TranslationsEnGb extends Translations
   @override
   String get cannotExceedTotalCapacity => 'Cannot exceed total capacity';
   @override
-  String get iosWidgetNextIntake => 'Next intake';
-  @override
-  String get iosWidgetIntakeDue => 'Intake due';
-  @override
-  String get iosWidgetDue => 'Due';
-  @override
-  String get iosWidgetLate => 'Late';
-  @override
-  String get iosWidgetNoPlan => 'No plan';
-  @override
-  String get iosWidgetNoSchedule => 'No schedule';
-  @override
-  String get iosWidgetNow => 'Now';
-  @override
-  String iosWidgetFuture({required Object duration}) => 'in ${duration}';
-  @override
-  String iosWidgetPast({required Object duration}) => '${duration} ago';
-  @override
   String daysAgoCount({required num count}) =>
       (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(
         count,
@@ -1113,15 +1095,6 @@ extension on TranslationsEnGb {
       'mustBeAtMost' => ({required Object max}) => 'Must be at most ${max}',
       'invalidTotalAmount' => 'Invalid total amount',
       'cannotExceedTotalCapacity' => 'Cannot exceed total capacity',
-      'iosWidgetNextIntake' => 'Next intake',
-      'iosWidgetIntakeDue' => 'Intake due',
-      'iosWidgetDue' => 'Due',
-      'iosWidgetLate' => 'Late',
-      'iosWidgetNoPlan' => 'No plan',
-      'iosWidgetNoSchedule' => 'No schedule',
-      'iosWidgetNow' => 'Now',
-      'iosWidgetFuture' => ({required Object duration}) => 'in ${duration}',
-      'iosWidgetPast' => ({required Object duration}) => '${duration} ago',
       'daysAgoCount' => ({required num count}) =>
           (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(
             count,

@@ -278,14 +278,5 @@
   "anchorToLastIntake": "Endurreikna út frá síðustu inntöku",
   "anchorToLastIntakeDescription": "Áætlar næstu inntöku með fullu millibili eftir að þú tókst hana síðast",
   "chooseItem": "Veldu atriði",
-  "noItemsToAdd": "Engar atriði tiltækar",
-  "iosWidgetNextIntake": "Næsta inntaka",
-  "iosWidgetIntakeDue": "Tími fyrir inntöku",
-  "iosWidgetDue": "Kominn tími",
-  "iosWidgetLate": "Seint",
-  "iosWidgetNoPlan": "Engin áætlun",
-  "iosWidgetNoSchedule": "Engin áætlun",
-  "iosWidgetNow": "Núna",
-  "iosWidgetFuture": "eftir {{duration}}",
-  "iosWidgetPast": "fyrir {{duration}} síðan"
+  "noItemsToAdd": "Engar atriði tiltækar"
 }

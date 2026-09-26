@@ -306,14 +306,5 @@
   "addSiteToGetStarted": "Añade una zona a continuación para empezar.",
   "placementSuggestionPerScheduleTitle": "Sugerir por horario",
   "placementSuggestionPerScheduleDescription": "Basa la sugerencia de la siguiente zona únicamente en el historial de este horario.",
-  "mustBeBetween1And28": "Debe estar entre 1 y 28",
-  "iosWidgetNextIntake": "Próxima toma",
-  "iosWidgetIntakeDue": "Toma pendiente",
-  "iosWidgetDue": "Pendiente",
-  "iosWidgetLate": "Atrasada",
-  "iosWidgetNoPlan": "Sin plan",
-  "iosWidgetNoSchedule": "Sin horarios",
-  "iosWidgetNow": "Ahora",
-  "iosWidgetFuture": "en {{duration}}",
-  "iosWidgetPast": "hace {{duration}}"
+  "mustBeBetween1And28": "Debe estar entre 1 y 28"
 }

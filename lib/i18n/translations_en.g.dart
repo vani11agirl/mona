@@ -888,29 +888,14 @@ class Translations with BaseTranslations<AppLocale, Translations> {
   /// en: '{count} today'
   String iosWidgetCountToday({required Object count}) => '${count} today';
 
-  /// en: 'Intake due'
-  String get iosWidgetIntakeDue => 'Intake due';
-
-  /// en: 'Due'
-  String get iosWidgetDue => 'Due';
-
-  /// en: 'Late'
-  String get iosWidgetLate => 'Late';
-
   /// en: 'No plan'
   String get iosWidgetNoPlan => 'No plan';
 
   /// en: 'No schedule'
   String get iosWidgetNoSchedule => 'No schedule';
 
-  /// en: 'Now'
-  String get iosWidgetNow => 'Now';
-
   /// en: 'in {duration}'
   String iosWidgetFuture({required Object duration}) => 'in ${duration}';
-
-  /// en: '{duration} ago'
-  String iosWidgetPast({required Object duration}) => '${duration} ago';
 
   /// en: '(one) {{count} day ago} (other) {{count} days ago}'
   String daysAgoCount({required num count}) =>
@@ -1419,14 +1404,9 @@ extension on Translations {
       'iosWidgetNextIntake' => 'Next intake',
       'iosWidgetIntakesDue' => 'Intakes due',
       'iosWidgetCountToday' => ({required Object count}) => '${count} today',
-      'iosWidgetIntakeDue' => 'Intake due',
-      'iosWidgetDue' => 'Due',
-      'iosWidgetLate' => 'Late',
       'iosWidgetNoPlan' => 'No plan',
       'iosWidgetNoSchedule' => 'No schedule',
-      'iosWidgetNow' => 'Now',
       'iosWidgetFuture' => ({required Object duration}) => 'in ${duration}',
-      'iosWidgetPast' => ({required Object duration}) => '${duration} ago',
       'daysAgoCount' => ({required num count}) =>
           (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(
             count,

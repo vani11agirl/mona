@@ -318,12 +318,7 @@
   "iosWidgetNextIntake": "Next intake",
   "iosWidgetIntakesDue": "Intakes due",
   "iosWidgetCountToday": "{{count}} today",
-  "iosWidgetIntakeDue": "Intake due",
-  "iosWidgetDue": "Due",
-  "iosWidgetLate": "Late",
   "iosWidgetNoPlan": "No plan",
   "iosWidgetNoSchedule": "No schedule",
-  "iosWidgetNow": "Now",
-  "iosWidgetFuture": "in {{duration}}",
-  "iosWidgetPast": "{{duration}} ago"
+  "iosWidgetFuture": "in {{duration}}"
 }

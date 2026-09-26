@@ -94,14 +94,5 @@
   "gel": "바르는 겔",
   "implant": "체내 이식(임플란트)",
   "suppository": "좌약",
-  "transdermalSpray": "피부 흡수형(스프레이)",
-  "iosWidgetNextIntake": "다음 투여",
-  "iosWidgetIntakeDue": "투여 시간",
-  "iosWidgetDue": "투여",
-  "iosWidgetLate": "지연",
-  "iosWidgetNoPlan": "계획 없음",
-  "iosWidgetNoSchedule": "일정 없음",
-  "iosWidgetNow": "지금",
-  "iosWidgetFuture": "{{duration}} 후",
-  "iosWidgetPast": "{{duration}} 전"
+  "transdermalSpray": "피부 흡수형(스프레이)"
 }

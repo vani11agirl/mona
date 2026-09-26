@@ -628,24 +628,6 @@ class TranslationsFr extends Translations
   String get cannotExceedTotalCapacity =>
       'Ne peut pas dépasser la capacité totale';
   @override
-  String get iosWidgetNextIntake => 'Prochaine prise';
-  @override
-  String get iosWidgetIntakeDue => 'Prise à faire';
-  @override
-  String get iosWidgetDue => 'À prendre';
-  @override
-  String get iosWidgetLate => 'En retard';
-  @override
-  String get iosWidgetNoPlan => 'Aucun plan';
-  @override
-  String get iosWidgetNoSchedule => 'Aucun planning';
-  @override
-  String get iosWidgetNow => 'Maintenant';
-  @override
-  String iosWidgetFuture({required Object duration}) => 'dans ${duration}';
-  @override
-  String iosWidgetPast({required Object duration}) => 'il y a ${duration}';
-  @override
   String daysAgoCount({required num count}) =>
       (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('fr'))(
         count,
@@ -1159,15 +1141,6 @@ extension on TranslationsFr {
       'mustBeAtMost' => ({required Object max}) => 'Doit être moins de ${max}',
       'invalidTotalAmount' => 'Montant total invalide',
       'cannotExceedTotalCapacity' => 'Ne peut pas dépasser la capacité totale',
-      'iosWidgetNextIntake' => 'Prochaine prise',
-      'iosWidgetIntakeDue' => 'Prise à faire',
-      'iosWidgetDue' => 'À prendre',
-      'iosWidgetLate' => 'En retard',
-      'iosWidgetNoPlan' => 'Aucun plan',
-      'iosWidgetNoSchedule' => 'Aucun planning',
-      'iosWidgetNow' => 'Maintenant',
-      'iosWidgetFuture' => ({required Object duration}) => 'dans ${duration}',
-      'iosWidgetPast' => ({required Object duration}) => 'il y a ${duration}',
       'daysAgoCount' => ({required num count}) =>
           (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('fr'))(
             count,

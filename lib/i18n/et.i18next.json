@@ -29,14 +29,5 @@
   "appVersion": "Mona versioon {{version}}",
   "exportFailed": "Eksportimine ei õnnestunud: {{error}}",
   "importDataTitle": "Impordi andmed",
-  "importDataSubtitle": "Taasta andmed JSON-vormingus varukoopiast",
-  "iosWidgetNextIntake": "Järgmine annus",
-  "iosWidgetIntakeDue": "Annuse aeg",
-  "iosWidgetDue": "Aeg",
-  "iosWidgetLate": "Hilinenud",
-  "iosWidgetNoPlan": "Plaan puudub",
-  "iosWidgetNoSchedule": "Ajakava puudub",
-  "iosWidgetNow": "Praegu",
-  "iosWidgetFuture": "{{duration}} pärast",
-  "iosWidgetPast": "{{duration}} tagasi"
+  "importDataSubtitle": "Taasta andmed JSON-vormingus varukoopiast"
 }

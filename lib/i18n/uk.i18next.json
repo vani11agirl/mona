@@ -306,14 +306,5 @@
   "addSiteToGetStarted": "Додайте місце нижче, щоб почати.",
   "placementSuggestionPerScheduleTitle": "Пропонувати за розкладом",
   "placementSuggestionPerScheduleDescription": "Базувати пропозицію наступного місця лише на історії цього розкладу.",
-  "mustBeBetween1And28": "Має бути від 1 до 28",
-  "iosWidgetNextIntake": "Наступний прийом",
-  "iosWidgetIntakeDue": "Час прийому",
-  "iosWidgetDue": "Час",
-  "iosWidgetLate": "Прострочено",
-  "iosWidgetNoPlan": "Немає плану",
-  "iosWidgetNoSchedule": "Розкладу немає",
-  "iosWidgetNow": "Зараз",
-  "iosWidgetFuture": "через {{duration}}",
-  "iosWidgetPast": "{{duration}} тому"
+  "mustBeBetween1And28": "Має бути від 1 до 28"
 }
