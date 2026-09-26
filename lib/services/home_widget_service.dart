@@ -20,7 +20,12 @@ typedef UpdateWidget = Future<void> Function({
 });
 
 class HomeWidgetService {
-  static const String appGroupId = 'group.com.deliacheminot.mona';
+  // Test builds may be re-signed into a different App Group. The extension's
+  // MonaWidgetAppGroup Info.plist value and both entitlements must match it.
+  static const String appGroupId = String.fromEnvironment(
+    'MONA_WIDGET_APP_GROUP',
+    defaultValue: 'group.com.deliacheminot.mona',
+  );
   static const String _iOSName = 'HrtWidget';
   static const String _qualifiedAndroidName =
       'com.deliacheminot.mona.HrtGlanceReceiver';
@@ -38,7 +43,6 @@ class HomeWidgetService {
   final UpdateWidget _updateWidget;
   Future<void> _pendingSync = Future.value();
   String? _lastPublishedData;
-  bool? _lastPublishedOnIOS;
 
   HomeWidgetService({
     SaveWidgetData? saveWidgetData,
@@ -63,22 +67,22 @@ class HomeWidgetService {
     MedicationScheduleProvider medicationScheduleProvider,
     LocaleProvider localeProvider,
   ) async {
+    final isIOS = isIOSPlatform?.call() ?? false;
     if (!(isPlatformSupported?.call() ?? isMobile) ||
         medicationIntakeProvider.isLoading ||
-        medicationScheduleProvider.isLoading) {
+        (isIOS && medicationScheduleProvider.isLoading)) {
       return;
     }
-    final isIOS = isIOSPlatform?.call() ?? false;
     final today = Date.today();
-    final locale = localeProvider.locale.toLanguageTag();
+    final locale = isIOS
+        ? localeProvider.locale.toLanguageTag()
+        : localeProvider.locale.languageCode;
     final intakeCount = medicationIntakeProvider.takenIntakes.length;
     final data = <String, Object?>{
       'hrt_first_date':
           _dateString(medicationIntakeProvider.firstTakenLocalDate),
       'app_locale': locale,
       'hrt_intake_count': intakeCount.toString(),
-      'hrt_recent_intake_counts':
-          _recentIntakeCounts(medicationIntakeProvider, today).join(','),
     };
     if (isIOS) {
       final strings = AppLocaleUtils.parse(locale).buildSync();
@@ -91,18 +95,6 @@ class HomeWidgetService {
       });
     }
     await _publish(data, isIOS: isIOS);
-  }
-
-  List<int> _recentIntakeCounts(
-    MedicationIntakeProvider medicationIntakeProvider,
-    Date today,
-  ) {
-    return List.generate(7, (index) {
-      final date = today.subtract(Duration(days: 6 - index));
-      return medicationIntakeProvider.takenIntakes
-          .where((intake) => intake.takenLocalDate == date)
-          .length;
-    });
   }
 
   Map<String, Object?> _intakeTimeline(
@@ -171,33 +163,34 @@ class HomeWidgetService {
   }
 
   Future<void> _publish(Map<String, Object?> data, {required bool isIOS}) {
+    if (!isIOS) return _publishAndroid(data);
+
     // Capture the complete value before yielding to another provider callback.
     final encoded = jsonEncode(data);
     final publication = _pendingSync.then((_) async {
-      if (_lastPublishedOnIOS == isIOS && _lastPublishedData == encoded) return;
+      if (_lastPublishedData == encoded) return;
 
       // A failed write/reload must not suppress the next attempt, even if the
       // caller changes back to the last successfully published value.
       _lastPublishedData = null;
-      if (isIOS) {
-        await _setAppGroupId(appGroupId);
-        await _saveWidgetData('widget_snapshot_v1', encoded);
-      } else {
-        // Keep the existing Glance storage contract on Android.
-        for (final entry in data.entries) {
-          await _saveWidgetData(entry.key, entry.value as String?);
-        }
-      }
-      await _updateWidget(
-        iOSName: _iOSName,
-        qualifiedAndroidName: _qualifiedAndroidName,
-      );
+      await _setAppGroupId(appGroupId);
+      await _saveWidgetData('widget_snapshot_v1', encoded);
+      await _updateWidget(iOSName: _iOSName);
       _lastPublishedData = encoded;
-      _lastPublishedOnIOS = isIOS;
     });
     // Recover the queue, but keep the failure visible to this call's caller.
     _pendingSync = publication.catchError((Object _) {});
     return publication;
+  }
+
+  Future<void> _publishAndroid(Map<String, Object?> data) async {
+    // Preserve the pre-iOS Glance contract: three individual writes followed by
+    // a refresh on every call, without iOS snapshot queuing or deduplication.
+    await _saveWidgetData('hrt_first_date', data['hrt_first_date'] as String?);
+    await _saveWidgetData('app_locale', data['app_locale'] as String?);
+    await _saveWidgetData(
+        'hrt_intake_count', data['hrt_intake_count'] as String?);
+    await _updateWidget(qualifiedAndroidName: _qualifiedAndroidName);
   }
 
   String? _dateString(Date? date) => date == null

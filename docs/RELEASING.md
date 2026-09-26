@@ -104,3 +104,20 @@ Run the script from the repository root:
 ```bash
 scripts/ios_release.sh
 ```
+
+#### Widget data in re-signed test builds
+
+The app and widget must open the same App Group that their final provisioning
+profiles authorize. Some sideloaders replace App Groups when re-signing; changing
+the bundle identifiers alone does not update the group used by the code.
+
+For those test builds, build Flutter with
+`--dart-define=MONA_WIDGET_APP_GROUP=<authorized-group>`, set the widget extension's
+`MonaWidgetAppGroup` Info.plist string to that same group in the staged bundle,
+and sign both targets with matching `com.apple.security.application-groups`
+entitlements and profiles. Check the final signatures, not just the source
+entitlements. Edit staged bundle metadata before signing, never afterward.
+
+Ordinary builds default to `group.com.deliacheminot.mona` on both sides. A group
+change does not migrate old widget snapshots: open Mona once after installing to
+publish its existing app data into the new shared container.

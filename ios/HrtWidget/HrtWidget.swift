@@ -2,7 +2,9 @@ import SwiftUI
 import WidgetKit
 
 private let widgetKind = "HrtWidget"
-private let appGroupID = "group.com.deliacheminot.mona"
+// Sideload test builds must use the App Group granted by their signing profile.
+private let appGroupID = Bundle.main.object(forInfoDictionaryKey: "MonaWidgetAppGroup") as? String
+    ?? "group.com.deliacheminot.mona"
 
 private func sharedWidgetData() -> [String: Any] {
     guard let defaults = UserDefaults(suiteName: appGroupID) else { return [:] }
@@ -85,6 +87,7 @@ fileprivate struct NextIntakeSnapshot {
                 : -Int(ceil(-seconds / 60))
             return NextIntakeCountdown(
                 remainingMinutes: minutes,
+                remainingMonths: Calendar.current.dateComponents([.month], from: now, to: dueAt).month ?? 0,
                 intervalMinutes: intervalMinutes
             )
         }
@@ -99,6 +102,7 @@ fileprivate struct NextIntakeSnapshot {
         let days = calendar.dateComponents([.day], from: logicalToday, to: dueDay).day ?? 0
         return NextIntakeCountdown(
             remainingMinutes: days * 24 * 60,
+            remainingMonths: calendar.dateComponents([.month], from: logicalToday, to: dueDay).month ?? 0,
             intervalMinutes: intervalMinutes
         )
     }
@@ -106,6 +110,7 @@ fileprivate struct NextIntakeSnapshot {
 
 private struct NextIntakeCountdown {
     let remainingMinutes: Int
+    let remainingMonths: Int
     let intervalMinutes: Int
 
     var display: (value: Int, unit: Unit) {
@@ -116,9 +121,9 @@ private struct NextIntakeCountdown {
         if minutes < 24 * 60 {
             return (minutes / 60, .hours)
         }
-        // Preview-only approximation; real month durations need calendar dates.
-        if minutes >= 30 * 24 * 60 {
-            return (minutes / (30 * 24 * 60), .months)
+        // Use completed calendar months, not a fixed 30-day approximation.
+        if remainingMonths > 0 {
+            return (remainingMonths, .months)
         }
         // Keep whole-day precision until the month range.
         return (minutes / (24 * 60), .days)
@@ -257,10 +262,8 @@ struct HrtWidgetEntry: TimelineEntry {
     let date: Date
     let durationValue: Int
     fileprivate let durationUnit: HrtDurationUnit
-    let intakeCount: Int
     let showsIntakes: Bool
     let hasHrtData: Bool
-    let recentIntakeCounts: [Int]
     fileprivate let nextIntake: NextIntakeSnapshot?
     let pendingTodayCount: Int
     let intakeTimelineExpired: Bool
@@ -364,22 +367,13 @@ struct HrtWidgetProvider: TimelineProvider {
         let localeIdentifier = data["app_locale"] as? String ?? Locale.current.identifier
         let copy = WidgetCopy(localeIdentifier: localeIdentifier)
         let duration = HrtDurationSnapshot(data: data)?.duration(at: date)
-        let intakeCount = max(0, Int(data["hrt_intake_count"] as? String ?? "") ?? 0)
-        let recentCounts = (data["hrt_recent_intake_counts"] as? String)?
-            .split(separator: ",")
-            .map { max(0, Int($0) ?? 0) }
-        let normalizedRecentCounts = recentCounts?.count == 7
-            ? recentCounts ?? []
-            : Array(repeating: 0, count: 7)
 
         return HrtWidgetEntry(
             date: date,
             durationValue: duration?.value ?? 0,
             durationUnit: duration?.unit ?? .days,
-            intakeCount: intakeCount,
             showsIntakes: duration != nil,
             hasHrtData: duration != nil,
-            recentIntakeCounts: normalizedRecentCounts,
             nextIntake: NextIntakeSnapshot(data: state.values),
             pendingTodayCount: max(0, Int(state.values["next_intake_today_count"] as? String ?? "") ?? 0),
             intakeTimelineExpired: state.expired,
@@ -403,15 +397,11 @@ struct HrtWidgetEntryView: View {
             switch family {
             case .systemSmall:
                 smallWidget
-            case .systemLarge:
-                largeWidget
-            case .systemMedium:
-                mediumWidget
             default:
                 if #available(iOSApplicationExtension 16.0, *) {
                     accessoryWidget
                 } else {
-                    mediumWidget
+                    smallWidget
                 }
             }
         }
@@ -456,168 +446,6 @@ struct HrtWidgetEntryView: View {
         .accessibilityLabel(accessibilitySummary)
     }
 
-    private var mediumWidget: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Label("HRT summary", systemImage: "calendar")
-                .font(.caption.weight(.semibold))
-                .foregroundColor(HrtWidgetColors.accent)
-
-            Spacer(minLength: 12)
-
-            HStack(alignment: .bottom, spacing: 28) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(entry.durationText)
-                        .font(.title2.weight(.bold))
-                        .foregroundColor(.primary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
-
-                    Text(entry.homeTitle)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-
-                if entry.showsIntakes {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("\(entry.intakeCount)")
-                            .font(.title2.weight(.bold))
-                            .foregroundColor(.primary)
-
-                        Text(entry.intakeCount == 1 ? "Intake logged" : "Intakes logged")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                }
-
-                Spacer(minLength: 0)
-            }
-        }
-        .monaContentMargins()
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(accessibilitySummary)
-    }
-
-    private var largeWidget: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Label("HRT summary", systemImage: "calendar")
-                .font(.caption.weight(.semibold))
-                .foregroundColor(HrtWidgetColors.accent)
-
-            HStack(alignment: .bottom, spacing: 24) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(entry.durationText)
-                        .font(.system(size: 34, weight: .bold, design: .rounded))
-                        .foregroundColor(.primary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.6)
-                    Text(entry.homeTitle)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-
-                if entry.showsIntakes {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("\(entry.intakeCount)")
-                            .font(.system(size: 34, weight: .bold, design: .rounded))
-                        Text(entry.intakeCount == 1 ? "Intake logged" : "Intakes logged")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                }
-
-                Spacer(minLength: 0)
-            }
-            .padding(.top, 14)
-
-            Divider()
-                .padding(.vertical, 13)
-
-            HStack(alignment: .firstTextBaseline) {
-                Text("Recent intakes")
-                    .font(.headline)
-                Spacer(minLength: 8)
-                Text("Last 7 days")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-
-            recentActivityGraph
-                .padding(.top, 8)
-        }
-        .monaContentMargins()
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(accessibilitySummary)
-    }
-
-    private var recentActivityGraph: some View {
-        GeometryReader { geometry in
-            let maximum = max(entry.recentIntakeCounts.max() ?? 0, 1)
-
-            HStack(alignment: .bottom, spacing: 7) {
-                ForEach(entry.recentIntakeCounts.indices, id: \.self) { index in
-                    let count = entry.recentIntakeCounts[index]
-
-                    VStack(spacing: 4) {
-                        Spacer(minLength: 0)
-
-                        if count > 0 {
-                            Text("\(count)")
-                                .font(.caption2)
-                                .foregroundColor(.secondary)
-                        }
-
-                        Rectangle()
-                            .fill(
-                                count == 0
-                                    ? HrtWidgetColors.accent.opacity(0.16)
-                                    : HrtWidgetColors.accent
-                            )
-                            .frame(
-                                height: count == 0
-                                    ? 2
-                                    : max(
-                                        8,
-                                        (geometry.size.height - 30)
-                                            * CGFloat(count)
-                                            / CGFloat(maximum)
-                                    )
-                            )
-
-                        Text(dayLabel(for: index))
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-            }
-        }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(recentActivityAccessibilityLabel)
-    }
-
-    private func dayLabel(for index: Int) -> String {
-        let daysAgo = 6 - index
-        guard let date = Calendar.current.date(
-            byAdding: .day,
-            value: -daysAgo,
-            to: entry.date
-        ) else {
-            return ""
-        }
-
-        let formatter = DateFormatter()
-        formatter.locale = .current
-        formatter.setLocalizedDateFormatFromTemplate("EEEEE")
-        return formatter.string(from: date)
-    }
-
-    private var recentActivityAccessibilityLabel: String {
-        let values = entry.recentIntakeCounts.indices.map { index in
-            let count = entry.recentIntakeCounts[index]
-            return "\(dayLabel(for: index)), \(count) \(count == 1 ? "intake" : "intakes")"
-        }
-        return "Recent intake activity. \(values.joined(separator: ", "))."
-    }
 
     private var accessibilitySummary: String {
         guard entry.hasHrtData else { return "\(entry.homeTitle), \(entry.homeEmptyText)." }
@@ -735,13 +563,13 @@ private extension View {
     @ViewBuilder
     func monaWidgetBackground(for family: WidgetFamily) -> some View {
         if #available(iOSApplicationExtension 17.0, *) {
-            if family == .systemSmall || family == .systemMedium || family == .systemLarge {
+            if family == .systemSmall {
                 containerBackground(Color(.systemBackground), for: .widget)
             } else {
                 containerBackground(Color.clear, for: .widget)
             }
         } else {
-            if family == .systemSmall || family == .systemMedium || family == .systemLarge {
+            if family == .systemSmall {
                 background(Color(.systemBackground))
             } else {
                 self
@@ -759,10 +587,6 @@ struct HrtWidget: Widget {
     private var supportedFamilies: [WidgetFamily] {
         var families: [WidgetFamily] = [
             .systemSmall,
-            // Re-enable other sizes as their designs are reviewed.
-            // .systemMedium,
-            // .systemLarge,
-            // .accessoryInline,
         ]
         if #available(iOSApplicationExtension 16.0, *) {
             families += [.accessoryCircular, .accessoryRectangular]

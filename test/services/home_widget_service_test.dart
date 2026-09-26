@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:clock/clock.dart';
@@ -41,6 +42,21 @@ void main() {
     late MockMedicationScheduleProvider scheduleProvider;
     late MockLocaleProvider localeProvider;
 
+    HomeWidgetService makeService({
+      SaveWidgetData? saveWidgetData,
+      UpdateWidget? updateWidget,
+    }) =>
+        HomeWidgetService(
+          saveWidgetData: saveWidgetData ??
+              (id, data) async => saved.add({'id': id, 'data': data}),
+          setAppGroupId: (groupId) async => appGroups.add(groupId),
+          updateWidget: updateWidget ??
+              ({iOSName, qualifiedAndroidName}) async => updated.add((
+                    iOSName: iOSName,
+                    qualifiedAndroidName: qualifiedAndroidName,
+                  )),
+        );
+
     Map<String, dynamic> snapshot() =>
         jsonDecode(saved.last['data']!) as Map<String, dynamic>;
 
@@ -79,82 +95,34 @@ void main() {
       HomeWidgetService.isIOSPlatform = null;
     });
 
-    final keyCases = [
-      (name: 'first date', id: 'hrt_first_date', data: '2026-01-05'),
-      (name: 'locale', id: 'app_locale', data: 'fr'),
-      (name: 'intake count', id: 'hrt_intake_count', data: '3'),
-      (
-        name: 'recent intake counts',
-        id: 'hrt_recent_intake_counts',
-        data: '0,0,0,0,0,0,0',
-      ),
-    ];
-    for (final c in keyCases) {
-      test('saves the ${c.name} under its shared key', () async {
-        // Arrange
-        final service = HomeWidgetService(
-          saveWidgetData: (id, data) async =>
-              saved.add({'id': id, 'data': data}),
-          setAppGroupId: (groupId) async => appGroups.add(groupId),
-          updateWidget: ({iOSName, qualifiedAndroidName}) async => updated.add((
-            iOSName: iOSName,
-            qualifiedAndroidName: qualifiedAndroidName,
-          )),
-        );
-        // Act
-        await service.sync(intakeProvider, scheduleProvider, localeProvider);
-        // Assert
-        expect(saved, contains(equals({'id': c.id, 'data': c.data})));
-      });
-    }
-
-    test('saves seven daily intake counts from oldest to newest', () async {
+    test('publishes the Android widget keys while schedules are loading',
+        () async {
       // Arrange
-      final service = HomeWidgetService(
-        saveWidgetData: (id, data) async => saved.add({'id': id, 'data': data}),
-        setAppGroupId: (groupId) async => appGroups.add(groupId),
-        updateWidget: ({iOSName, qualifiedAndroidName}) async => updated.add((
-          iOSName: iOSName,
-          qualifiedAndroidName: qualifiedAndroidName,
-        )),
-      );
-      when(intakeProvider.takenIntakes).thenReturn([
-        aMedicationIntake(),
-        aMedicationIntake(),
-        aMedicationIntake(),
-      ]);
+      final service = makeService();
+      when(scheduleProvider.isLoading).thenReturn(true);
 
       // Act
-      await withClock(
-        Clock.fixed(DateTime.utc(2025, 1, 6, 12)),
-        () => service.sync(intakeProvider, scheduleProvider, localeProvider),
-      );
+      await service.sync(intakeProvider, scheduleProvider, localeProvider);
 
       // Assert
-      expect(
-        saved,
-        contains(
-          equals({'id': 'hrt_recent_intake_counts', 'data': '3,0,0,0,0,0,0'}),
-        ),
-      );
+      expect(saved, [
+        {'id': 'hrt_first_date', 'data': '2026-01-05'},
+        {'id': 'app_locale', 'data': 'fr'},
+        {'id': 'hrt_intake_count', 'data': '3'},
+      ]);
+      expect(updated, hasLength(1));
+      verifyNever(scheduleProvider.schedules);
     });
 
     test('updates the Glance receiver', () async {
       // Arrange
-      final service = HomeWidgetService(
-        saveWidgetData: (id, data) async => saved.add({'id': id, 'data': data}),
-        setAppGroupId: (groupId) async => appGroups.add(groupId),
-        updateWidget: ({iOSName, qualifiedAndroidName}) async => updated.add((
-          iOSName: iOSName,
-          qualifiedAndroidName: qualifiedAndroidName,
-        )),
-      );
+      final service = makeService();
       // Act
       await service.sync(intakeProvider, scheduleProvider, localeProvider);
       // Assert
       expect(updated, [
         (
-          iOSName: 'HrtWidget',
+          iOSName: null,
           qualifiedAndroidName: 'com.deliacheminot.mona.HrtGlanceReceiver',
         ),
       ]);
@@ -162,14 +130,7 @@ void main() {
 
     test('configures the shared App Group on iOS', () async {
       // Arrange
-      final service = HomeWidgetService(
-        saveWidgetData: (id, data) async => saved.add({'id': id, 'data': data}),
-        setAppGroupId: (groupId) async => appGroups.add(groupId),
-        updateWidget: ({iOSName, qualifiedAndroidName}) async => updated.add((
-          iOSName: iOSName,
-          qualifiedAndroidName: qualifiedAndroidName,
-        )),
-      );
+      final service = makeService();
       HomeWidgetService.isIOSPlatform = () => true;
       // Act
       await service.sync(intakeProvider, scheduleProvider, localeProvider);
@@ -182,15 +143,7 @@ void main() {
       () async {
         // Arrange
         HomeWidgetService.isIOSPlatform = () => true;
-        final service = HomeWidgetService(
-          saveWidgetData: (id, data) async =>
-              saved.add({'id': id, 'data': data}),
-          setAppGroupId: (groupId) async => appGroups.add(groupId),
-          updateWidget: ({iOSName, qualifiedAndroidName}) async => updated.add((
-            iOSName: iOSName,
-            qualifiedAndroidName: qualifiedAndroidName,
-          )),
-        );
+        final service = makeService();
 
         // Act
         await service.sync(intakeProvider, scheduleProvider, localeProvider);
@@ -215,14 +168,7 @@ void main() {
       when(scheduleProvider.schedules).thenReturn([schedule]);
       when(intakeProvider.getTakenIntakesForScheduleOn(schedule.id, date))
           .thenReturn([]);
-      final service = HomeWidgetService(
-        saveWidgetData: (id, data) async => saved.add({'id': id, 'data': data}),
-        setAppGroupId: (groupId) async => appGroups.add(groupId),
-        updateWidget: ({iOSName, qualifiedAndroidName}) async => updated.add((
-          iOSName: iOSName,
-          qualifiedAndroidName: qualifiedAndroidName,
-        )),
-      );
+      final service = makeService();
 
       // Act
       await withClock(
@@ -240,7 +186,8 @@ void main() {
       expect(state['next_intake_interval_minutes'], '1440');
     });
 
-    test('counts overdue intakes alongside pending intakes for today', () async {
+    test('counts overdue intakes alongside pending intakes for today',
+        () async {
       // Arrange
       HomeWidgetService.isIOSPlatform = () => true;
       final date = Date(year: 2026, month: 6, day: 1);
@@ -317,14 +264,7 @@ void main() {
           .thenReturn(null);
       when(intakeProvider.getLastTakenIntakeForSchedule(schedule.id))
           .thenReturn(null);
-      final service = HomeWidgetService(
-        saveWidgetData: (id, data) async => saved.add({'id': id, 'data': data}),
-        setAppGroupId: (groupId) async => appGroups.add(groupId),
-        updateWidget: ({iOSName, qualifiedAndroidName}) async => updated.add((
-          iOSName: iOSName,
-          qualifiedAndroidName: qualifiedAndroidName,
-        )),
-      );
+      final service = makeService();
 
       // Act
       await withClock(
@@ -342,14 +282,7 @@ void main() {
     test('clears iOS countdown data when no intake is scheduled', () async {
       // Arrange
       HomeWidgetService.isIOSPlatform = () => true;
-      final service = HomeWidgetService(
-        saveWidgetData: (id, data) async => saved.add({'id': id, 'data': data}),
-        setAppGroupId: (groupId) async => appGroups.add(groupId),
-        updateWidget: ({iOSName, qualifiedAndroidName}) async => updated.add((
-          iOSName: iOSName,
-          qualifiedAndroidName: qualifiedAndroidName,
-        )),
-      );
+      final service = makeService();
 
       // Act
       await service.sync(intakeProvider, scheduleProvider, localeProvider);
@@ -364,21 +297,34 @@ void main() {
 
     test('preserves the locale region for widget localization', () async {
       // Arrange
-      final service = HomeWidgetService(
-        saveWidgetData: (id, data) async => saved.add({'id': id, 'data': data}),
-        setAppGroupId: (groupId) async => appGroups.add(groupId),
-        updateWidget: ({iOSName, qualifiedAndroidName}) async => updated.add((
-          iOSName: iOSName,
-          qualifiedAndroidName: qualifiedAndroidName,
-        )),
-      );
+      HomeWidgetService.isIOSPlatform = () => true;
+      final service = makeService();
       when(localeProvider.locale).thenReturn(
         const Locale.fromSubtags(languageCode: 'pt', countryCode: 'BR'),
       );
       // Act
       await service.sync(intakeProvider, scheduleProvider, localeProvider);
       // Assert
-      expect(saved, contains(equals({'id': 'app_locale', 'data': 'pt-BR'})));
+      expect(snapshot()['app_locale'], 'pt-BR');
+    });
+
+    test('keeps Android language codes and refreshes unchanged data', () async {
+      // Arrange
+      final service = makeService();
+      when(localeProvider.locale).thenReturn(const Locale('pt', 'BR'));
+
+      // Act
+      await service.sync(intakeProvider, scheduleProvider, localeProvider);
+      await service.sync(intakeProvider, scheduleProvider, localeProvider);
+
+      // Assert
+      expect(saved, hasLength(6));
+      expect(saved.where((entry) => entry['id'] == 'app_locale'), [
+        {'id': 'app_locale', 'data': 'pt'},
+        {'id': 'app_locale', 'data': 'pt'},
+      ]);
+      expect(updated, hasLength(2));
+      expect(appGroups, isEmpty);
     });
 
     test(
@@ -386,15 +332,7 @@ void main() {
       () async {
         // Arrange
         HomeWidgetService.isIOSPlatform = () => true;
-        final service = HomeWidgetService(
-          saveWidgetData: (id, data) async =>
-              saved.add({'id': id, 'data': data}),
-          setAppGroupId: (groupId) async => appGroups.add(groupId),
-          updateWidget: ({iOSName, qualifiedAndroidName}) async => updated.add((
-            iOSName: iOSName,
-            qualifiedAndroidName: qualifiedAndroidName,
-          )),
-        );
+        final service = makeService();
 
         // Act
         await service.sync(intakeProvider, scheduleProvider, localeProvider);
@@ -411,14 +349,7 @@ void main() {
 
     test('pushes a null first date to clear the widget', () async {
       // Arrange
-      final service = HomeWidgetService(
-        saveWidgetData: (id, data) async => saved.add({'id': id, 'data': data}),
-        setAppGroupId: (groupId) async => appGroups.add(groupId),
-        updateWidget: ({iOSName, qualifiedAndroidName}) async => updated.add((
-          iOSName: iOSName,
-          qualifiedAndroidName: qualifiedAndroidName,
-        )),
-      );
+      final service = makeService();
       when(intakeProvider.firstTakenLocalDate).thenReturn(null);
       // Act
       await service.sync(intakeProvider, scheduleProvider, localeProvider);
@@ -426,16 +357,110 @@ void main() {
       expect(saved, contains(equals({'id': 'hrt_first_date', 'data': null})));
     });
 
+    test('serializes overlapping snapshots in capture order', () async {
+      // Arrange
+      HomeWidgetService.isIOSPlatform = () => true;
+      final firstSaveStarted = Completer<void>();
+      final releaseFirstSave = Completer<void>();
+      final operations = <String>[];
+      final service = makeService(
+        saveWidgetData: (id, data) async {
+          final locale = jsonDecode(data!)['app_locale'];
+          operations.add('save:$locale');
+          saved.add({'id': id, 'data': data});
+          if (saved.length == 1) {
+            firstSaveStarted.complete();
+            await releaseFirstSave.future;
+          }
+          operations.add('saved:$locale');
+        },
+        updateWidget: ({iOSName, qualifiedAndroidName}) async {
+          operations.add('reload');
+          updated.add(
+              (iOSName: iOSName, qualifiedAndroidName: qualifiedAndroidName));
+        },
+      );
+
+      // Act
+      final first =
+          service.sync(intakeProvider, scheduleProvider, localeProvider);
+      await firstSaveStarted.future;
+      when(localeProvider.locale).thenReturn(const Locale('de'));
+      final second =
+          service.sync(intakeProvider, scheduleProvider, localeProvider);
+      await Future<void>.delayed(Duration.zero);
+      final writesWhileBlocked = saved.length;
+      final reloadsWhileBlocked = updated.length;
+      releaseFirstSave.complete();
+      await Future.wait([first, second]);
+
+      // Assert
+      expect(writesWhileBlocked, 1);
+      expect(reloadsWhileBlocked, 0);
+      expect(saved.map((entry) => jsonDecode(entry['data']!)['app_locale']),
+          ['fr', 'de']);
+      expect(updated, hasLength(2));
+      expect(operations,
+          ['save:fr', 'saved:fr', 'reload', 'save:de', 'saved:de', 'reload']);
+    });
+
+    test('does not republish an identical successful snapshot', () async {
+      // Arrange
+      HomeWidgetService.isIOSPlatform = () => true;
+      final service = makeService();
+
+      // Act
+      await Future.wait([
+        service.sync(intakeProvider, scheduleProvider, localeProvider),
+        service.sync(intakeProvider, scheduleProvider, localeProvider),
+      ]);
+      await service.sync(intakeProvider, scheduleProvider, localeProvider);
+
+      // Assert
+      expect(saved, hasLength(1));
+      expect(updated, hasLength(1));
+    });
+
+    for (final failure in ['save', 'reload']) {
+      test('retries the same snapshot after a failed $failure', () async {
+        // Arrange
+        HomeWidgetService.isIOSPlatform = () => true;
+        var shouldFail = true;
+        final service = makeService(
+          saveWidgetData: (id, data) async {
+            if (shouldFail && failure == 'save') {
+              throw StateError('save failed');
+            }
+            saved.add({'id': id, 'data': data});
+          },
+          updateWidget: ({iOSName, qualifiedAndroidName}) async {
+            if (shouldFail && failure == 'reload') {
+              throw StateError('reload failed');
+            }
+            updated.add(
+                (iOSName: iOSName, qualifiedAndroidName: qualifiedAndroidName));
+          },
+        );
+
+        // Act
+        final failed =
+            service.sync(intakeProvider, scheduleProvider, localeProvider);
+        // Observe the failure before retrying so it cannot become unhandled.
+        await expectLater(failed, throwsStateError);
+        shouldFail = false;
+        await service.sync(intakeProvider, scheduleProvider, localeProvider);
+        await service.sync(intakeProvider, scheduleProvider, localeProvider);
+
+        // Assert
+        expect(saved, hasLength(failure == 'save' ? 1 : 2));
+        expect(updated, hasLength(1));
+        expect(snapshot()['app_locale'], 'fr');
+      });
+    }
+
     test('does nothing when the platform is unsupported', () async {
       // Arrange
-      final service = HomeWidgetService(
-        saveWidgetData: (id, data) async => saved.add({'id': id, 'data': data}),
-        setAppGroupId: (groupId) async => appGroups.add(groupId),
-        updateWidget: ({iOSName, qualifiedAndroidName}) async => updated.add((
-          iOSName: iOSName,
-          qualifiedAndroidName: qualifiedAndroidName,
-        )),
-      );
+      final service = makeService();
       HomeWidgetService.isPlatformSupported = () => false;
       // Act
       await service.sync(intakeProvider, scheduleProvider, localeProvider);
@@ -445,14 +470,7 @@ void main() {
 
     test('does nothing while the intake provider is loading', () async {
       // Arrange
-      final service = HomeWidgetService(
-        saveWidgetData: (id, data) async => saved.add({'id': id, 'data': data}),
-        setAppGroupId: (groupId) async => appGroups.add(groupId),
-        updateWidget: ({iOSName, qualifiedAndroidName}) async => updated.add((
-          iOSName: iOSName,
-          qualifiedAndroidName: qualifiedAndroidName,
-        )),
-      );
+      final service = makeService();
       when(intakeProvider.isLoading).thenReturn(true);
       // Act
       await service.sync(intakeProvider, scheduleProvider, localeProvider);
@@ -460,16 +478,11 @@ void main() {
       expect(saved, isEmpty);
     });
 
-    test('does nothing while the schedule provider is loading', () async {
+    test('does nothing on iOS while the schedule provider is loading',
+        () async {
       // Arrange
-      final service = HomeWidgetService(
-        saveWidgetData: (id, data) async => saved.add({'id': id, 'data': data}),
-        setAppGroupId: (groupId) async => appGroups.add(groupId),
-        updateWidget: ({iOSName, qualifiedAndroidName}) async => updated.add((
-          iOSName: iOSName,
-          qualifiedAndroidName: qualifiedAndroidName,
-        )),
-      );
+      HomeWidgetService.isIOSPlatform = () => true;
+      final service = makeService();
       when(scheduleProvider.isLoading).thenReturn(true);
 
       // Act
