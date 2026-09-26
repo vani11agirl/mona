@@ -37,8 +37,7 @@ NextIntake? _candidate(IntakeSlot slot, DateTime now) {
     case AsNeededSchedule _:
       return null;
     case DailySchedule scheduling:
-      final time = slot.time;
-      if (time == null) return null;
+      final time = slot.time!;
       final date = taken ? slot.date.add(const Duration(days: 1)) : slot.date;
       return (
         date: date,
