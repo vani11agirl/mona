@@ -263,16 +263,20 @@ private struct HrtDurationSnapshot {
     func duration(at now: Date) -> (value: Int, unit: HrtDurationUnit) {
         let calendar = widgetCalendar
         let today = logicalDay(at: now, startingAt: dayStart)
+        // Match Dart and Android: future-recorded intakes use the same
+        // absolute calendar distance as past intakes.
+        let start = min(firstDay, today)
+        let end = max(firstDay, today)
 
-        let days = max(0, calendar.dateComponents([.day], from: firstDay, to: today).day ?? 0)
+        let days = calendar.dateComponents([.day], from: start, to: end).day ?? 0
         if days < 7 { return (max(days, 1), .days) }
         if days < 90 { return (days / 7, .weeks) }
 
-        let first = calendar.dateComponents([.year, .month, .day], from: firstDay)
-        let current = calendar.dateComponents([.year, .month, .day], from: today)
-        var months = ((current.year ?? 0) - (first.year ?? 0)) * 12
-            + (current.month ?? 0) - (first.month ?? 0)
-        if (current.day ?? 0) < (first.day ?? 0) { months -= 1 }
+        let first = calendar.dateComponents([.year, .month, .day], from: start)
+        let last = calendar.dateComponents([.year, .month, .day], from: end)
+        var months = ((last.year ?? 0) - (first.year ?? 0)) * 12
+            + (last.month ?? 0) - (first.month ?? 0)
+        if (last.day ?? 0) < (first.day ?? 0) { months -= 1 }
         return months < 12 ? (max(months, 1), .months) : (months / 12, .years)
     }
 }
@@ -423,6 +427,7 @@ struct HrtWidgetEntryView: View {
             default:
                 if #available(iOSApplicationExtension 16.0, *) {
                     accessoryWidget
+                        .privacySensitive()
                 } else {
                     smallWidget
                 }
