@@ -122,11 +122,15 @@ class _MonaAppState extends State<MonaApp> with WidgetsBindingObserver {
   void _regenerateHomeWidget() {
     if (!_initialized || !mounted) return;
 
-    _homeWidgetService.sync(
-      _medicationIntakeProvider,
-      _medicationScheduleProvider,
-      _localeProvider,
-    );
+    _homeWidgetService
+        .sync(
+          _medicationIntakeProvider,
+          _medicationScheduleProvider,
+          _localeProvider,
+        )
+        .catchError((Object error) {
+          debugPrint('Could not sync home widget: $error');
+        });
   }
 
   void _checkTimezoneChange() {
