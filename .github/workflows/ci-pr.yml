@@ -111,6 +111,11 @@ jobs:
       - name: Run tests with coverage
         run: flutter test --coverage
 
+      - name: Check generated iOS widget translations
+        run: |
+          dart run tool/i18next_to_ios_widget_res.dart
+          git diff --exit-code -- ios/HrtWidget/WidgetTranslations.json
+
   build_android:
     name: Build Android APK
     runs-on: ubuntu-latest
