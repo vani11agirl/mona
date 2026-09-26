@@ -13,6 +13,8 @@ class LocaleProvider extends ChangeNotifier {
 
   Locale get locale => _locale;
 
+  bool get followsSystemLocale => _prefs.savedLanguageTag == null;
+
   List<Locale> get supportedLocales => AppLocaleUtils.supportedLocales;
 
   void setLocale(Locale newLocale) {

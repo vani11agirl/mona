@@ -289,28 +289,23 @@ struct HrtWidgetEntry: TimelineEntry {
     fileprivate let nextIntake: NextIntakeSnapshot?
     let pendingTodayCount: Int
     let intakeTimelineExpired: Bool
-    let localeIdentifier: String
-    let homeTitle: String
-    let homeIntakeText: String
-    let homeEmptyText: String
+    // Nil follows the current system language rather than the last app launch.
+    let localeIdentifier: String?
+    let homeIntakeTexts: [String: String]
 
-    fileprivate var copy: WidgetCopy { WidgetCopy(localeIdentifier: localeIdentifier) }
-
-    fileprivate var durationText: String {
+    fileprivate func durationText(copy: WidgetCopy) -> String {
         guard hasHrtData else { return "—" }
         let (components, units) = durationUnit.components(value: durationValue)
         let localized = copy.duration(components, units: units, abbreviated: false)
         return localized.isEmpty ? "\(durationValue) \(durationUnit.label(for: durationValue))" : localized
     }
-
-    fileprivate var intakeText: String {
-        homeIntakeText
-    }
 }
 
 struct HrtWidgetProvider: TimelineProvider {
     func placeholder(in context: Context) -> HrtWidgetEntry {
-        entry(at: Date(), data: sharedWidgetData())
+        // WidgetKit also uses placeholders when sensitive data is hidden.
+        // Never read the shared snapshot here, even when the app has data.
+        entry(at: Date(), data: [:])
     }
 
     func getSnapshot(
@@ -392,8 +387,6 @@ struct HrtWidgetProvider: TimelineProvider {
 
     private func entry(at date: Date, data: [String: Any]) -> HrtWidgetEntry {
         let state = intakeData(at: date, in: data)
-        let localeIdentifier = data["app_locale"] as? String ?? Locale.current.identifier
-        let copy = WidgetCopy(localeIdentifier: localeIdentifier)
         let duration = HrtDurationSnapshot(data: data)?.duration(at: date)
 
         return HrtWidgetEntry(
@@ -404,11 +397,8 @@ struct HrtWidgetProvider: TimelineProvider {
             nextIntake: NextIntakeSnapshot(data: state.values, dayStart: dayStartMinutes(in: data)),
             pendingTodayCount: max(0, Int(state.values["next_intake_today_count"] as? String ?? "") ?? 0),
             intakeTimelineExpired: state.expired,
-            localeIdentifier: localeIdentifier,
-            homeTitle: data["widget_home_title"] as? String ?? copy.homeTitle,
-            homeIntakeText: data["widget_home_intakes"] as? String
-                ?? "",
-            homeEmptyText: data["widget_home_empty"] as? String ?? copy.homeEmpty
+            localeIdentifier: data["app_locale"] as? String,
+            homeIntakeTexts: data["widget_home_intakes"] as? [String: String] ?? [:]
         )
     }
 }
@@ -416,8 +406,19 @@ struct HrtWidgetProvider: TimelineProvider {
 struct HrtWidgetEntryView: View {
     @Environment(\.widgetFamily) private var family
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.locale) private var systemLocale
 
     let entry: HrtWidgetEntry
+
+    private var copy: WidgetCopy {
+        WidgetCopy(localeIdentifier: entry.localeIdentifier
+            ?? Locale.preferredLanguages.first
+            ?? systemLocale.identifier)
+    }
+
+    private var homeIntakeText: String {
+        entry.homeIntakeTexts[copy.languageTag] ?? entry.homeIntakeTexts["en"] ?? ""
+    }
 
     var body: some View {
         Group {
@@ -427,18 +428,18 @@ struct HrtWidgetEntryView: View {
             default:
                 if #available(iOSApplicationExtension 16.0, *) {
                     accessoryWidget
-                        .privacySensitive()
                 } else {
                     smallWidget
                 }
             }
         }
         .monaWidgetBackground(for: family)
+        .privacySensitive()
     }
 
     private var smallWidget: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Label(entry.homeTitle, systemImage: "calendar")
+            Label(copy.homeTitle, systemImage: "calendar")
                 .font(.caption.weight(.semibold))
                 .foregroundColor(
                     colorScheme == .dark ? HrtWidgetColors.darkAccent : HrtWidgetColors.accent
@@ -446,21 +447,21 @@ struct HrtWidgetEntryView: View {
 
             Spacer(minLength: 8)
 
-            Text(entry.durationText)
+            Text(entry.durationText(copy: copy))
                 .font(.system(size: 32, weight: .bold, design: .rounded))
                 .foregroundColor(.primary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.52)
 
-            if entry.hasHrtData && !entry.intakeText.isEmpty {
-                Text(entry.intakeText)
+            if entry.hasHrtData && !homeIntakeText.isEmpty {
+                Text(homeIntakeText)
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
                     .padding(.top, 4)
             } else {
-                Text(entry.homeEmptyText)
+                Text(copy.homeEmpty)
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .lineLimit(1)
@@ -476,10 +477,10 @@ struct HrtWidgetEntryView: View {
 
 
     private var accessibilitySummary: String {
-        guard entry.hasHrtData else { return "\(entry.homeTitle), \(entry.homeEmptyText)." }
-        var summary = "\(entry.homeTitle), \(entry.durationText)."
-        if !entry.intakeText.isEmpty {
-            summary += " \(entry.intakeText)."
+        guard entry.hasHrtData else { return "\(copy.homeTitle), \(copy.homeEmpty)." }
+        var summary = "\(copy.homeTitle), \(entry.durationText(copy: copy))."
+        if !homeIntakeText.isEmpty {
+            summary += " \(homeIntakeText)."
         }
         return summary
     }
@@ -489,9 +490,9 @@ struct HrtWidgetEntryView: View {
     }
 
     private var accessoryTitle: String {
-        guard let countdown else { return entry.copy.nextIntake.uppercased(with: entry.copy.locale) }
-        let title = countdown.remainingMinutes <= 0 ? entry.copy.intakesDue : entry.copy.nextIntake
-        return title.uppercased(with: entry.copy.locale)
+        guard let countdown else { return copy.nextIntake.uppercased(with: copy.locale) }
+        let title = countdown.remainingMinutes <= 0 ? copy.intakesDue : copy.nextIntake
+        return title.uppercased(with: copy.locale)
     }
 
     @available(iOSApplicationExtension 16.0, *)
@@ -503,7 +504,7 @@ struct HrtWidgetEntryView: View {
                     value: Double(max(0, min(countdown.remainingMinutes, countdown.intervalMinutes))),
                     in: 0...Double(countdown.intervalMinutes)
                 ) {
-                    Text(entry.copy.nextIntake)
+                    Text(copy.nextIntake)
                 } currentValueLabel: {
                     VStack(spacing: -3) {
                         if countdown.remainingMinutes <= 0 {
@@ -514,7 +515,7 @@ struct HrtWidgetEntryView: View {
                                 .font(.system(size: 25, weight: .medium, design: .rounded))
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.7)
-                            Text(entry.copy.circularUnit(
+                            Text(copy.circularUnit(
                                 countdown.display.unit.components(value: countdown.display.value),
                                 units: countdown.display.unit.calendarUnit
                             ))
@@ -528,17 +529,17 @@ struct HrtWidgetEntryView: View {
                 .widgetAccentable()
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(countdown.accessibilityLabel(
-                    copy: entry.copy,
+                    copy: copy,
                     pendingTodayCount: entry.pendingTodayCount
                 ))
             } else {
                 Gauge(value: 0, in: 0...1) {
-                    Text(entry.copy.nextIntake)
+                    Text(copy.nextIntake)
                 } currentValueLabel: {
                     VStack(spacing: -3) {
                         Text("—")
                             .font(.system(size: 25, weight: .medium, design: .rounded))
-                        Text(entry.intakeTimelineExpired ? "" : entry.copy.noPlan.uppercased(with: entry.copy.locale))
+                        Text(entry.intakeTimelineExpired ? "" : copy.noPlan.uppercased(with: copy.locale))
                             .font(.system(size: 10, weight: .medium, design: .rounded))
                     }
                 }
@@ -552,7 +553,7 @@ struct HrtWidgetEntryView: View {
                 Text(accessoryTitle)
                     .font(.caption2.weight(.semibold))
                 Text(countdown?.rectangularText(
-                    copy: entry.copy,
+                    copy: copy,
                     pendingTodayCount: entry.pendingTodayCount
                 ) ?? emptyIntakeText)
                     .font(.system(size: 21, weight: .semibold, design: .rounded))
@@ -564,7 +565,7 @@ struct HrtWidgetEntryView: View {
             .widgetAccentable()
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(countdown?.accessibilityLabel(
-                copy: entry.copy,
+                copy: copy,
                 pendingTodayCount: entry.pendingTodayCount
             )
                 ?? emptyIntakeText)
@@ -574,7 +575,7 @@ struct HrtWidgetEntryView: View {
     }
 
     private var emptyIntakeText: String {
-        entry.intakeTimelineExpired ? "—" : entry.copy.noSchedule
+        entry.intakeTimelineExpired ? "—" : copy.noSchedule
     }
 }
 
@@ -609,7 +610,9 @@ private extension View {
 struct HrtWidget: Widget {
     private var pickerCopy: WidgetCopy {
         let savedLocale = sharedWidgetData()["app_locale"] as? String
-        return WidgetCopy(localeIdentifier: savedLocale ?? Locale.current.identifier)
+        return WidgetCopy(localeIdentifier: savedLocale
+            ?? Locale.preferredLanguages.first
+            ?? Locale.autoupdatingCurrent.identifier)
     }
 
     private var supportedFamilies: [WidgetFamily] {

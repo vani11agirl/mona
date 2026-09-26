@@ -26,6 +26,7 @@ void main() {
 
       // Assert
       expect(provider.locale, const Locale('de'));
+      expect(provider.followsSystemLocale, isTrue);
     });
 
     test('constructor loads locale from stored BCP-47 language tag', () async {
@@ -40,6 +41,7 @@ void main() {
 
       // Assert
       expect(provider.locale, const Locale('fr'));
+      expect(provider.followsSystemLocale, isFalse);
     });
 
     test('constructor loads script and country from stored language tag',
@@ -149,6 +151,7 @@ void main() {
 
       // Assert
       expect(provider.locale, const Locale('de'));
+      expect(provider.followsSystemLocale, isTrue);
     });
 
     test('updates followers when the system language changes', () async {

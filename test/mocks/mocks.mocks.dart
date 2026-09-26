@@ -741,6 +741,12 @@ class MockLocaleProvider extends _i1.Mock implements _i21.LocaleProvider {
       ) as _i5.Locale);
 
   @override
+  bool get followsSystemLocale => (super.noSuchMethod(
+        Invocation.getter(#followsSystemLocale),
+        returnValue: false,
+      ) as bool);
+
+  @override
   List<_i5.Locale> get supportedLocales => (super.noSuchMethod(
         Invocation.getter(#supportedLocales),
         returnValue: <_i5.Locale>[],
@@ -770,6 +776,15 @@ class MockLocaleProvider extends _i1.Mock implements _i21.LocaleProvider {
         returnValue: _i9.Future<void>.value(),
         returnValueForMissingStub: _i9.Future<void>.value(),
       ) as _i9.Future<void>);
+
+  @override
+  void updateSystemLocale(_i5.Locale? systemLocale) => super.noSuchMethod(
+        Invocation.method(
+          #updateSystemLocale,
+          [systemLocale],
+        ),
+        returnValueForMissingStub: null,
+      );
 
   @override
   void addListener(_i5.VoidCallback? listener) => super.noSuchMethod(

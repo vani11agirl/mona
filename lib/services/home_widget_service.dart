@@ -75,7 +75,9 @@ class HomeWidgetService {
     }
     final today = Date.today();
     final locale = isIOS
-        ? localeProvider.locale.toLanguageTag()
+        ? (localeProvider.followsSystemLocale
+            ? null
+            : localeProvider.locale.toLanguageTag())
         : localeProvider.locale.languageCode;
     final intakeCount = medicationIntakeProvider.takenIntakes.length;
     final data = <String, Object?>{
@@ -85,12 +87,15 @@ class HomeWidgetService {
       'hrt_intake_count': intakeCount.toString(),
     };
     if (isIOS) {
-      final strings = AppLocaleUtils.parse(locale).buildSync();
       data.addAll({
         'logical_day_start_minutes': logicalDayStartMinutes,
-        'widget_home_title': strings.HrtCounter,
-        'widget_home_intakes': strings.intakesLoggedCount(count: intakeCount),
-        'widget_home_empty': strings.neverTakenYet,
+        // Keep the app's plural rules without freezing the widget's language
+        // when system settings change while Mona is closed.
+        'widget_home_intakes': {
+          for (final language in AppLocale.values)
+            language.languageTag:
+                language.buildSync().intakesLoggedCount(count: intakeCount),
+        },
         ..._intakeTimeline(
             medicationIntakeProvider, medicationScheduleProvider, today),
       });

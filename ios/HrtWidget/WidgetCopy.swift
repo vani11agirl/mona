@@ -4,13 +4,16 @@ import Foundation
 // updates can localize themselves while the Flutter app is closed.
 struct WidgetCopy {
     let locale: Locale
+    let languageTag: String
     private let words: [String: String]
 
     init(localeIdentifier: String) {
-        locale = Locale(identifier: localeIdentifier)
-        let normalized = localeIdentifier.replacingOccurrences(of: "_", with: "-")
-        let language = normalized.split(separator: "-").first.map(String.init) ?? "en"
-        words = Self.translations[normalized] ?? Self.translations[language] ?? [:]
+        let supported = ["en"] + Self.translations.keys.filter { $0 != "en" }.sorted()
+        languageTag = Bundle.preferredLocalizations(from: supported, forPreferences: [localeIdentifier]).first ?? "en"
+        let requested = Locale(identifier: localeIdentifier)
+        let matched = Locale(identifier: languageTag)
+        locale = requested.languageCode == matched.languageCode ? requested : matched
+        words = Self.translations[languageTag] ?? [:]
     }
 
     private func text(_ key: String) -> String {

@@ -88,6 +88,7 @@ void main() {
       when(intakeProvider.takenIntakes)
           .thenReturn(List.filled(3, aMedicationIntake()));
       when(localeProvider.locale).thenReturn(const Locale('fr'));
+      when(localeProvider.followsSystemLocale).thenReturn(false);
     });
 
     tearDown(() {
@@ -180,9 +181,9 @@ void main() {
         await service.sync(intakeProvider, scheduleProvider, localeProvider);
 
         // Assert
-        expect(snapshot()['widget_home_title'], 'Temps sous THS');
-        expect(snapshot()['widget_home_intakes'], '3 prises enregistrées');
-        expect(snapshot()['widget_home_empty'], 'Jamais pris auparavant');
+        final intakeTexts = snapshot()['widget_home_intakes'];
+        expect(intakeTexts['en'], '3 intakes logged');
+        expect(intakeTexts['fr'], '3 prises enregistrées');
       },
     );
 
@@ -373,10 +374,27 @@ void main() {
         // Assert
         expect(saved.map((entry) => jsonDecode(entry['data']!)['app_locale']),
             ['fr', 'de']);
-        expect(snapshot()['widget_home_title'], 'Zeit auf HET');
         expect(updated, hasLength(2));
       },
     );
+
+    test('does not freeze the resolved language when following the system',
+        () async {
+      // Arrange
+      HomeWidgetService.isIOSPlatform = () => true;
+      when(localeProvider.followsSystemLocale).thenReturn(true);
+      final service = makeService();
+
+      // Act
+      await service.sync(intakeProvider, scheduleProvider, localeProvider);
+      when(localeProvider.locale).thenReturn(const Locale('de'));
+      await service.sync(intakeProvider, scheduleProvider, localeProvider);
+
+      // Assert
+      expect(snapshot()['app_locale'], isNull);
+      expect(saved, hasLength(1));
+      expect(updated, hasLength(1));
+    });
 
     test('pushes a null first date to clear the widget', () async {
       // Arrange
