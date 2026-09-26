@@ -240,7 +240,7 @@ void main() {
       expect(state['next_intake_interval_minutes'], '1440');
     });
 
-    test('shares the number of pending intakes for the logical day', () async {
+    test('counts overdue intakes alongside pending intakes for today', () async {
       // Arrange
       HomeWidgetService.isIOSPlatform = () => true;
       final date = Date(year: 2026, month: 6, day: 1);
@@ -255,7 +255,16 @@ void main() {
         scheduling: anAsNeededStrategy(),
         startDate: date,
       );
-      when(scheduleProvider.schedules).thenReturn([daily, asNeeded]);
+      final overdue = aMedicationSchedule(
+        scheduling: aDynamicIntervalStrategy(),
+        startDate: date.subtract(const Duration(days: 1)),
+      );
+      final upcoming = aMedicationSchedule(
+        scheduling: anIntervalStrategy(),
+        startDate: date.add(const Duration(days: 3)),
+      );
+      when(scheduleProvider.schedules)
+          .thenReturn([daily, asNeeded, overdue, upcoming]);
       when(intakeProvider.getTakenIntakesForScheduleOn(daily.id, date))
           .thenReturn([
         aMedicationIntake(
@@ -287,7 +296,8 @@ void main() {
       );
 
       // Assert
-      expect(stateAt(DateTime(2026, 6, 1, 12))['next_intake_today_count'], '2');
+      expect(stateAt(DateTime(2026, 6, 1, 12))['next_intake_today_count'], '3');
+      expect(stateAt(DateTime(2026, 6, 2, 4))['next_intake_today_count'], '4');
       expect(operations, ['save:widget_snapshot_v1', 'update']);
       expect(snapshot()['hrt_first_date'], '2026-01-05');
       expect(snapshot()['app_locale'], 'fr');

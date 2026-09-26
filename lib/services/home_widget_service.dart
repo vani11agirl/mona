@@ -127,11 +127,12 @@ class HomeWidgetService {
       final end = boundary(day + 1);
       withClock(Clock.fixed(start), () {
         final slots = SlotsBuilder(intakes, schedules).intakeSlots();
+        // Carry overdue slots forward, but exclude future logical days.
         final pendingTodayCount = slots
             .where((slot) =>
                 slot.status != ScheduleStatus.taken &&
                 slot.status != ScheduleStatus.asNeeded &&
-                slot.date == Date.today())
+                !slot.date.isAfterToday)
             .length;
         final changes = <DateTime>{start};
         for (final slot in slots) {
